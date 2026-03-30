@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SenseWorld AI 多模态对话平台
 
-## Getting Started
+Next.js 14 + Prisma 5 + MySQL 8 全栈应用。
 
-First, run the development server:
+## 本地开发启动
 
 ```bash
+# 1. 安装依赖
+npm install
+
+# 2. 配置环境变量
+cp .env.example .env
+# 编辑 .env，至少填写 DATABASE_URL 和 JWT_SECRET
+
+# 3. 启动 MySQL（Docker）
+docker compose up -d mysql
+
+# 4. 同步数据库 schema
+npm run db:push
+
+# 5. 初始化管理员账号（读取 .env 中的 ADMIN_USERNAME / ADMIN_PASSWORD）
+npm run db:seed
+
+# 6. 启动开发服务
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+访问 [http://localhost:3000/admin/login](http://localhost:3000/admin/login) 进入管理后台。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Docker Compose 完整启动
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cp .env.example .env
+# 编辑 .env 填写所需配置
+docker compose up
+```
 
-## Learn More
+## 管理后台
 
-To learn more about Next.js, take a look at the following resources:
+后台地址：`/admin/login`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+初始账号通过环境变量 `ADMIN_USERNAME` / `ADMIN_PASSWORD` 在 seed 阶段创建。
+生产环境请设置强密码，并使用 `openssl rand -base64 32` 生成 `JWT_SECRET`。
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+功能：
+- 运营配置面板（AI 模型、语音服务、System Prompt 等）
+- 访客入口管理（生成/禁用访客链接、二维码）
 
-## Deploy on Vercel
+## 扩展新 Provider
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+实现 `lib/ai/types.ts` 中的 `LLMProvider` 接口，在对应 Factory 中注册即可，无需修改业务逻辑。
