@@ -95,6 +95,8 @@
 ## Active Technologies
 - TypeScript 5.x，Node.js 20 LTS + Next.js 14, Tailwind CSS, shadcn/ui, Prisma ORM, bcryptjs (001-project-scaffold)
 - MySQL 8.0（Docker Compose 容器），Prisma 管理 schema 和迁移 (001-project-scaffold)
+- TypeScript 5.x，Node.js 20 LTS + Next.js 14, jose 6.x, bcryptjs, Prisma ORM 5.x, qrcode.react（新增） (002-admin-backend)
+- MySQL 8.0，复用 AdminUser / Config / AccessToken 三张已有表 (002-admin-backend)
 
 ## Recent Changes
 - 001-project-scaffold: Added TypeScript 5.x，Node.js 20 LTS + Next.js 14, Tailwind CSS, shadcn/ui, Prisma ORM, bcryptjs
