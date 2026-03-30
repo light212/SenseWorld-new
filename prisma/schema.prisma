@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Config {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String   @db.Text
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+model AccessToken {
+  id        Int       @id @default(autoincrement())
+  token     String    @unique
+  label     String?
+  expiresAt DateTime?
+  enabled   Boolean   @default(true)
+  createdAt DateTime  @default(now())
+}
+
+model ChatSession {
+  id          String    @id @default(uuid())
+  accessToken String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  messages    Message[]
+
+  @@index([accessToken])
+}
+
+model Message {
+  id        Int         @id @default(autoincrement())
+  sessionId String
+  role      MessageRole
+  content   String      @db.Text
+  imageUrl  String?     @db.Text
+  createdAt DateTime    @default(now())
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
+
+enum MessageRole {
+  user
+  assistant
+}

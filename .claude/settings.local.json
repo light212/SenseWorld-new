@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git push:*)",
+      "Bash(.specify/scripts/bash/create-new-feature.sh \"001-project-scaffold\" --json --short-name \"project-scaffold\" \"SenseWorld AI 多模态对话平台项目脚手架\")",
+      "Bash(.specify/scripts/bash/setup-plan.sh --json)",
+      "Bash(.specify/scripts/bash/update-agent-context.sh --json)",
+      "Bash(.specify/scripts/bash/update-agent-context.sh claude:*)",
+      "Bash(.specify/scripts/bash/check-prerequisites.sh --json)",
+      "Bash(.specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks)",
+      "Bash(npx create-next-app@14 . --typescript --tailwind --eslint --app --src-dir=false --import-alias='@/*' --no-git)",
+      "Read(//private/tmp/**)",
+      "Bash(npx create-next-app@14 senseworld-scaffold --typescript --tailwind --eslint --app --src-dir=false --import-alias='@/*' --no-git)",
+      "Bash(rm -rf senseworld-scaffold)",
+      "Bash(npx create-next-app@14 senseworld-scaffold --typescript --tailwind --eslint --app --src-dir=false --import-alias='@/*' --no-git --yes)",
+      "Bash(pnpm --version)",
+      "Bash(bun --version)",
+      "Bash(yarn --version)",
+      "Bash(pnpm create:*)",
+      "Bash(pnpm add:*)",
+      "Bash(ls /Users/tangxuguang/project/git/SenseWorld-new/.eslint*)",
+      "Bash(pnpm tsc:*)",
+      "Bash(pnpm prisma:*)",
+      "Bash(pnpm approve-builds:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
