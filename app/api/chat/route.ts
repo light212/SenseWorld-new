@@ -105,10 +105,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'AI provider not configured' }, { status: 503 })
   }
 
-  // 8. Build messages for LLM
+  // 8. Query MCP Server for additional context (silent fallback on failure)
+  let mcpContext = ''
+  const mcpServerUrl = await getConfig('MCP_SERVER_URL')
+  if (mcpServerUrl) {
+    try {
+      const { MCPClientFactory } = await import('@/lib/mcp/factory')
+      const mcpClient = MCPClientFactory.create()
+      await mcpClient.connect(mcpServerUrl)
+      mcpContext = await mcpClient.query(message)
+      await mcpClient.disconnect()
+    } catch {
+      // silent degradation
+    }
+  }
+  const effectiveSystemPrompt = mcpContext
+    ? `${systemPrompt ?? ''}\n\n--- Knowledge Base Context ---\n${mcpContext}`.trim()
+    : systemPrompt
+
+  // 9. Build messages for LLM
   const imageBase64 = provider.supportsVision && images?.[0] ? images[0] : undefined
   const chatMessages: ChatMessage[] = [
-    ...(systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : []),
+    ...(effectiveSystemPrompt ? [{ role: 'system' as const, content: effectiveSystemPrompt }] : []),
     ...history.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
     { role: 'user' as const, content: message, ...(imageBase64 ? { imageBase64 } : {}) },
   ]
