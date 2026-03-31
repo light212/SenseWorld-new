@@ -13,6 +13,7 @@ export class AvatarFactory {
    * @returns AvatarProvider 实例
    * @throws 不支持的服务商时抛出错误
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   static create(provider: string, apiKey: string): AvatarProvider {
     switch (provider) {
       // Feature 008-avatar 阶段实现以下 case

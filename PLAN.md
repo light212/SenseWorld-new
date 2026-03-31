@@ -7,9 +7,9 @@
 | # | Feature | 说明 | 状态 |
 |---|---------|------|------|
 | 001 | project-scaffold | Next.js 14 + TypeScript + MySQL + Prisma + Tailwind + Docker 基础结构 | ✅ 已完成 |
-| 002 | admin-backend | 后台管理：运营配置（AI/语音/Avatar/System Prompt）+ 访客入口链接/二维码生成 | ⬜ 待开始 |
-| 003 | ai-chat-core | 多模型适配层（LLMProvider 接口）+ 流式对话 SSE + 对话历史管理 | ⬜ 待开始 |
-| 004 | voice | STT/TTS 可配置语音能力（SpeechProvider 接口 + OpenAI/Azure 实现） | ⬜ 待开始 |
+| 002 | admin-backend | 后台管理：运营配置（AI/语音/Avatar/System Prompt）+ 访客入口链接/二维码生成 | ✅ 已完成 |
+| 003 | ai-chat-core | 多模型适配层（LLMProvider 接口）+ 流式对话 SSE + 对话历史管理 | ✅ 已完成 |
+| 004 | voice-stt-tts | STT/TTS 可配置语音能力（SpeechProvider 接口 + OpenAI/Azure 实现） | 🔄 进行中 |
 | 005 | vision-input | 摄像头截帧组件 + Vision 输入附加到 AI 请求 | ⬜ 待开始 |
 | 006 | chat-ui | 前端对话界面（消息列表、流式显示、录音按钮、摄像头预览） | ⬜ 待开始 |
 | 007 | mcp-integration | MCP Server 连接层（@modelcontextprotocol/sdk，预留接口） | ⬜ 待开始 |

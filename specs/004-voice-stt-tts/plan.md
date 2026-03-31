@@ -140,4 +140,7 @@ app/api/speech/
 ## Open Questions
 
 1. `app/api/speech/route.ts`（现有占位文件）是否需要保留或删除？实现时确认其内容后决定。
-2. `validateToken()` 函数目前在 `/api/chat/route.ts` 内部定义，是否需要提取到 `lib/auth.ts`？若本 feature 是第二处使用，应提取；否则内联复制。
+
+## Decisions Made
+
+- `validateToken()` 函数提取到 `lib/auth/token.ts`，供 `/api/chat`、`/api/speech/stt`、`/api/speech/tts` 共同复用。`/api/chat/route.ts` 中的内联实现同步替换为 import。

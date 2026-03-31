@@ -3,17 +3,10 @@ import { prisma } from '@/lib/db'
 import { getConfig } from '@/lib/config'
 import { LLMFactory } from '@/lib/ai/factory'
 import type { ChatMessage } from '@/lib/ai/types'
+import { validateToken } from '@/lib/auth/token'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
-
-async function validateToken(token: string): Promise<boolean> {
-  const record = await prisma.accessToken.findUnique({ where: { token } })
-  if (!record) return false
-  if (!record.enabled) return false
-  if (record.expiresAt && record.expiresAt <= new Date()) return false
-  return true
-}
 
 export async function POST(req: NextRequest) {
   // 1. Validate access token
