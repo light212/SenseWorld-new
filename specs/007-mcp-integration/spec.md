@@ -46,20 +46,7 @@
 - 网络超时：5 秒超时后降级，不阻塞对话
 - MCP Server 地址格式非法（非 http/https）：测试连接返回「地址格式无效」
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right edge cases.
--->
-
-- What happens when [boundary condition]?
-- How does system handle [error scenario]?
-
 ## Requirements *(mandatory)*
-
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right functional requirements.
--->
 
 ### Functional Requirements
 
@@ -79,11 +66,6 @@
 
 ## Success Criteria *(mandatory)*
 
-<!--
-  ACTION REQUIRED: Define measurable success criteria.
-  These must be technology-agnostic and measurable.
--->
-
 ### Measurable Outcomes
 
 - **SC-001**: 配置有效 MCP Server 后，AI 回复可引用知识库内容（通过对话验证）。
@@ -92,12 +74,6 @@
 - **SC-004**: `MCP_SERVER_URL` 未配置时，`/api/chat` 响应时间与未集成前无显著差异（无额外延迟）。
 
 ## Assumptions
-
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right assumptions based on reasonable defaults
-  chosen when the feature description did not specify certain details.
--->
 
 - MCP Server 由公司内部维护，提供 HTTP API；本 feature 通过 HTTP POST 查询，无需 WebSocket。
 - `@modelcontextprotocol/sdk` 是否已安装需 research 阶段确认；若未安装，改用原生 `fetch` 实现 HTTP 查询。
