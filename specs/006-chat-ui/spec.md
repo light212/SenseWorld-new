@@ -98,7 +98,7 @@
 - **FR-006**: 消息列表 MUST 在新消息出现时自动滚动到底部。
 - **FR-007**: 录音按钮 MUST 在 `supportsSTT: true` 时显示；按住触发录音，松开发送至 `/api/speech/stt`，转录文字自动发送。
 - **FR-008**: 摄像头开关 MUST 集成 `CameraCapture` 组件（来自 005-vision-input）；开启时发送消息附带截帧图片。
-- **FR-009**: TTS MUST 在 `supportsTTS: true` 时，AI 回复完成后自动调用 `/api/speech/tts` 播放语音；TTS 失败时静默降级。
+- **FR-009**: TTS MUST 在 `supportsTTS: true` 时，AI 回复完成后自动调用 `/api/speech/tts` 播放语音；新消息发送时 MUST 停止当前音频播放；TTS 失败时静默降级，不显示错误提示。
 - **FR-010**: 录音按钮 MUST 支持 touch 事件（移动端兼容）。
 - **FR-011**: 系统 MUST 通过 `/api/config/capabilities` 或等效接口获取 provider 能力标志（`supportsSTT`、`supportsTTS`、`supportsVision`），根据结果动态显示/隐藏对应 UI 控件。
 
@@ -119,15 +119,9 @@
 
 ## Assumptions
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right assumptions based on reasonable defaults
-  chosen when the feature description did not specify certain details.
--->
-
 - `/api/chat`（SSE 流式）、`/api/speech/stt`、`/api/speech/tts` 路由已由 003/004 实现并可用。
 - `CameraCapture` 组件（`components/camera-capture.tsx`）由 005-vision-input 实现，本 feature 直接复用。
-- 后端提供接口（或通过现有接口）返回 provider 能力标志；若无，前端默认全部显示并按实际响应降级。
+- 本 feature 需新增 `GET /api/capabilities?token=<token>` 端点，返回 `{ supportsSTT, supportsTTS, supportsVision }`；该端点从 `LLMFactory` 和 `SpeechFactory` 读取当前 provider 能力标志。现有路由均不返回此信息。
 - 本期不实现 Avatar 视频播放（留给 008-avatar）；TTS 播放采用 `<audio>` 标签直接播放 arraybuffer。
 - 移动端支持在 scope 内，但不需要 PWA 或原生应用适配。
 - 用户为访客（非注册用户），通过 token 访问；无账号体系。
