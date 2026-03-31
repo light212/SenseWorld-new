@@ -1,13 +1,9 @@
 <!--
 Sync Impact Report
 ==================
-Version change: N/A → 1.0.0 (initial ratification)
-Modified principles: none (new file)
-Added sections:
-  - Core Principles (I–V)
-  - Technology Constraints
-  - Development Workflow
-  - Governance
+Version change: 1.2.0 → 1.2.1 (patch — VII corrected: pnpm replaces npm)
+Modified principles: VII. Package Manager Uniformity (npm → pnpm)
+Added sections: none
 Removed sections: none
 Templates reviewed:
   - .specify/templates/plan-template.md       ⚠ pending manual review
@@ -44,38 +40,46 @@ This rule applies to all contributors and all AI-generated content.
 ### IV. Spec-Driven Development
 
 Every feature MUST begin with an approved `spec.md` before any implementation
-starts. The development sequence is non-negotiable: `speckit.specify` →
-`speckit.plan` → `speckit.tasks` → `speckit.implement`. No code may be merged
+starts. The development sequence is non-negotiable: `speckit.specify` ->
+`speckit.plan` -> `speckit.tasks` -> `speckit.implement`. No code may be merged
 for a feature that lacks a corresponding approved spec and plan.
 
 ### V. Security-First Secrets Handling
 
 No credentials, API keys, or passwords may be committed to the repository in any
-form. All secrets MUST be injected via environment variables. Passwords stored
-in the database MUST use a non-reversible hash. The `.env.example` file MUST
-contain only placeholder values, never real credentials.
+form. All secrets MUST be stored in `.env.local` (gitignored) or the database
+`Config` table. `.env.example` MUST document every required variable with a
+placeholder value only. Any commit containing a real secret is grounds for
+immediate branch deletion and secret rotation.
+
+### VI. Directory Structure Consistency
+
+All feature implementations MUST reuse the directory structure established by
+`001-project-scaffold`. Provider implementations are placed in their designated
+directories:
+
+- LLM Providers: `lib/ai/`
+- Speech Providers: `lib/speech/`
+- Avatar Providers: `lib/avatar/`
+- MCP integrations: `lib/mcp/`
+
+Creating functionally equivalent parallel directories (e.g., `lib/llm/`,
+`lib/providers/`) is PROHIBITED. When spec-kit generates documents that reference
+conflicting paths, those paths MUST be corrected during the tasks phase before
+implementation begins.
+
+### VII. Package Manager Uniformity
+
+This project uses `pnpm` as the sole package manager. All install commands in
+`tasks.md` files, documentation, and CI scripts MUST use `pnpm add`. The use
+of `npm install`, `yarn`, or `bun` is PROHIBITED unless the user explicitly amends
+this principle. Lock file: `pnpm-lock.yaml` only.
 
 ## Technology Constraints
 
-- Framework: Next.js 14 App Router + TypeScript (strict mode)
-- UI: Tailwind CSS + shadcn/ui — no other CSS frameworks may be introduced
-- Database: MySQL via Prisma ORM — raw SQL queries are prohibited except in
-  migration files
-- Streaming: Server-Sent Events (SSE) for all AI response streaming
-- Container: Docker Compose for all deployment environments
-- Node.js: 20 LTS or above
-- No client-side state management library may be added without a constitution
-  amendment
-
-## Development Workflow
-
-- Features are developed in the order listed in `PLAN.md`; skipping features
-  requires explicit user approval and a PLAN.md update
-- Each feature lives on its own branch named `###-feature-name`
-- A feature is considered complete only when its `spec.md` acceptance scenarios
-  all pass and `PLAN.md` status is updated to done
-- All database schema changes MUST go through Prisma migrations — direct DDL
-  against the database is prohibited
+- **Runtime**: Node.js 20 LTS; no runtime switching without a constitution amendment
+- **Framework**: Next.js 14 App Router; Pages Router patterns are forbidden in new code
+- **Database ORM**: Prisma 5; raw SQL queries against the application database is prohibited
 - The `/api/health` endpoint MUST remain functional at all times; CI MUST verify
   it before any merge
 
@@ -90,4 +94,4 @@ where they conflict. Amendments require:
 All spec reviews and code reviews MUST verify compliance with this constitution.
 Any principle violation found during review blocks merge until resolved.
 
-**Version**: 1.0.0 | **Ratified**: 2025-01-30 | **Last Amended**: 2025-01-30
+**Version**: 1.2.1 | **Ratified**: 2025-01-30 | **Last Amended**: 2025-07-14

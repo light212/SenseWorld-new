@@ -1,4 +1,6 @@
 import type { SpeechProvider } from './types'
+import { OpenAISpeechProvider } from './openai-speech-provider'
+import { AzureSpeechProvider } from './azure-speech-provider'
 
 /**
  * SpeechFactory - 根据运营配置创建对应的 SpeechProvider 实例
@@ -11,16 +13,16 @@ export class SpeechFactory {
    * @param provider 服务商名称（与运营配置中 speech_provider 字段对应）
    * @param apiKey API 密钥
    * @param region 服务区域（Azure 等需要）
+   * @param voice TTS 音色（可选）
    * @returns SpeechProvider 实例
    * @throws 不支持的服务商时抛出错误
    */
-  static create(provider: string, apiKey: string, region?: string): SpeechProvider {
+  static create(provider: string, apiKey: string, region?: string, voice?: string): SpeechProvider {
     switch (provider) {
-      // Feature 004-voice 阶段实现以下 case
-      // case 'openai':
-      //   return new OpenAISpeechProvider(apiKey)
-      // case 'azure':
-      //   return new AzureSpeechProvider(apiKey, region!)
+      case 'openai':
+        return new OpenAISpeechProvider(apiKey, voice)
+      case 'azure':
+        return new AzureSpeechProvider(apiKey, region!, voice)
       default:
         throw new Error(`Unsupported speech provider: ${provider}`)
     }

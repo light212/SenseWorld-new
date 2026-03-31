@@ -97,6 +97,10 @@
 - MySQL 8.0（Docker Compose 容器），Prisma 管理 schema 和迁移 (001-project-scaffold)
 - TypeScript 5.x，Node.js 20 LTS + Next.js 14, jose 6.x, bcryptjs, Prisma ORM 5.x, qrcode.react（新增） (002-admin-backend)
 - MySQL 8.0，复用 AdminUser / Config / AccessToken 三张已有表 (002-admin-backend)
+- TypeScript 5.x，Node.js 20 LTS + Next.js 14, @anthropic-ai/sdk ^0.36.0（新增）, openai ^4.x（新增）, Prisma ORM 5.x (003-ai-chat-core)
+- MySQL 8.0，复用 ChatSession / Message / AccessToken / Config 四张已有表 (003-ai-chat-core)
+- TypeScript 5, Node.js 20 LTS + Next.js 14.2 App Router, `openai` ^6.33.0 (已有), native `fetch` (Azure REST) (004-voice-stt-tts)
+- MySQL via Prisma 5 — `Config` 表（现有）存储语音配置 (004-voice-stt-tts)
 
 ## Recent Changes
 - 001-project-scaffold: Added TypeScript 5.x，Node.js 20 LTS + Next.js 14, Tailwind CSS, shadcn/ui, Prisma ORM, bcryptjs
