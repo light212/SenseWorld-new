@@ -1,4 +1,15 @@
 {
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "ak_2AF69Q34G1ex08e5uA0kH6Jq7Xs9s",
+    "ANTHROPIC_BASE_URL": "http://localhost:3010",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "anthropic/claude-sonnet-4.6",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "anthropic/claude-opus-4.6",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "anthropic/claude-sonnet-4.6",
+    "ANTHROPIC_MODEL": "anthropic/claude-sonnet-4.6",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "HTTPS_PROXY": "http://127.0.0.1:7890",
+    "HTTP_PROXY": "http://127.0.0.1:7890"
+  },
   "permissions": {
     "allow": [
       "Bash(git push:*)",
@@ -52,7 +63,22 @@
       "WebSearch",
       "WebFetch(domain:platform.openai.com)",
       "Bash(bash .specify/scripts/bash/update-agent-context.sh)",
-      "Bash(pnpm build:*)"
+      "Bash(pnpm build:*)",
+      "Bash(ln:*)",
+      "Bash(bash .specify/scripts/bash/create-new-feature.sh \"摄像头截帧组件 + Vision 输入附加到 AI 请求\" --json --short-name \"vision-input\")",
+      "Bash(.specify/scripts/bash/create-new-feature.sh \"摄像头截帧组件 + Vision 输入附加到 AI 请求\" --json --short-name \"vision-input\" \"005-vision-input\")",
+      "Bash(bash .specify/scripts/bash/create-new-feature.sh '摄像头截帧组件 + Vision 输入附加到 AI 请求' --json --short-name 'vision-input' '005-vision-input')",
+      "Bash(git checkout:*)",
+      "Bash(python3 -c \"import json,sys; p=json.load\\(sys.stdin\\); print\\(''''Next:'''', p.get\\(''''dependencies'''',{}\\).get\\(''''next'''',''''''''\\)\\); print\\(''''TS:'''', p.get\\(''''devDependencies'''',{}\\).get\\(''''typescript'''',''''''''\\)\\)\")",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(ls /Users/tang/project/ai-project/SenseWorld-new/app/\\\\\\(chat\\\\\\)/)",
+      "Bash(cat /Users/tang/project/ai-project/SenseWorld-new/specs/006-chat-ui/contracts/*.md)",
+      "Bash(cat app/\\\\\\(chat\\\\\\)/page.tsx)",
+      "Bash(ls node_modules/.bin/tsc*)",
+      "Bash(./node_modules/.bin/tsc --noEmit)"
     ]
-  }
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "ANTHROPIC_AUTH_TOKEN": "ak_2AF69Q34G1ex08e5uA0kH6Jq7Xs9s",
+  "ANTHROPIC_BASE_URL": "http://localhost:3010"
 }

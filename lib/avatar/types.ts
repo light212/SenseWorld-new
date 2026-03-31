@@ -11,17 +11,19 @@
  */
 export interface AvatarProvider {
   /**
-   * 生成数字人视频
+   * 提交视频生成任务
    * @param text AI 回复文本（用于驱动数字人口型）
-   * @param audioUrl 可选的音频 URL（若服务商支持直接使用音频驱动）
-   * @returns 生成的视频 URL
+   * @returns 任务 ID（用于后续查询状态）
    */
-  generateVideo(text: string, audioUrl?: string): Promise<string>
+  submitVideo(text: string): Promise<string>
 
   /**
-   * 查询视频生成状态
+   * 查询视频生成状态及结果
    * @param jobId 任务 ID
-   * @returns 当前生成状态
+   * @returns status 为 'done' 时包含 videoUrl
    */
-  getStatus(jobId: string): Promise<'pending' | 'processing' | 'done' | 'failed'>
+  getVideoStatus(jobId: string): Promise<{
+    status: 'pending' | 'processing' | 'done' | 'failed'
+    videoUrl?: string
+  }>
 }

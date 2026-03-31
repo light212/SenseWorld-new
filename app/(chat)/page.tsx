@@ -7,6 +7,7 @@ import { ChatInputBar } from '@/components/chat/chat-input-bar'
 import CameraCapture, { type CameraCaptureRef } from '@/components/camera-capture'
 import { VoiceRecorder } from '@/components/voice-recorder'
 import type { CapabilityFlags, DisplayMessage, RecordingState } from '@/lib/types/chat'
+import AvatarPlayer from '@/components/chat/avatar-player'
 
 export default function ChatPage() {
   const searchParams = useSearchParams()
@@ -19,11 +20,17 @@ export default function ChatPage() {
     supportsSTT: false,
     supportsTTS: false,
     supportsVision: false,
+    supportsAvatar: false,
   })
   const [inputText, setInputText] = useState('')
   const [recordingState, setRecordingState] = useState<RecordingState>('idle')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const [avatarVideoUrl, setAvatarVideoUrl] = useState<string | null>(null)
+  const [avatarLoading, setAvatarLoading] = useState(false)
+  const [avatarError, setAvatarError] = useState<string | null>(null)
+  const avatarPollCancelRef = useRef(false)
 
   const cameraRef = useRef<CameraCaptureRef>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -76,9 +83,44 @@ export default function ChatPage() {
     }
   }
 
+  async function pollAvatarStatus(jobId: string) {
+    avatarPollCancelRef.current = false
+    const INTERVAL = 2000
+    const MAX_ATTEMPTS = 30
+    let attempts = 0
+    while (attempts < MAX_ATTEMPTS) {
+      if (avatarPollCancelRef.current) return
+      try {
+        const res = await fetch(`/api/avatar/status?jobId=${encodeURIComponent(jobId)}&token=${encodeURIComponent(token)}`)
+        const data = await res.json()
+        if (data.status === 'done' && data.videoUrl) {
+          setAvatarVideoUrl(data.videoUrl)
+          setAvatarLoading(false)
+          return
+        }
+        if (data.status === 'failed') {
+          setAvatarError('数字人生成失败')
+          setAvatarLoading(false)
+          return
+        }
+      } catch {
+        // network error, keep retrying
+      }
+      attempts++
+      await new Promise((r) => setTimeout(r, INTERVAL))
+    }
+    setAvatarError('数字人生成超时')
+    setAvatarLoading(false)
+  }
+
   const sendMessage = useCallback(async (overrideText?: string) => {
     const text = (overrideText ?? inputText).trim()
     if (!text || loading) return
+
+    // Cancel any in-progress avatar poll
+    avatarPollCancelRef.current = true
+    setAvatarVideoUrl(null)
+    setAvatarError(null)
 
     stopAudio()
     setInputText('')
@@ -186,6 +228,29 @@ export default function ChatPage() {
           // silent TTS failure
         }
       }
+
+      // Avatar
+      if (capabilities.supportsAvatar && fullContent) {
+        setAvatarLoading(true)
+        setAvatarError(null)
+        try {
+          const avatarRes = await fetch(`/api/avatar?token=${encodeURIComponent(token)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: fullContent }),
+          })
+          if (avatarRes.ok) {
+            const { jobId } = await avatarRes.json()
+            pollAvatarStatus(jobId)
+          } else {
+            setAvatarError('数字人暂时不可用')
+            setAvatarLoading(false)
+          }
+        } catch {
+          setAvatarError('数字人暂时不可用')
+          setAvatarLoading(false)
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '发送失败，请重试')
       setMessages((prev) => prev.filter((m) => m.id !== assistantId))
@@ -215,6 +280,17 @@ export default function ChatPage() {
             onError={(msg) => setError(msg)}
           />
           {/* Track camera active state via a hidden callback */}
+        </div>
+      )}
+
+      {/* Avatar player */}
+      {capabilities.supportsAvatar && (
+        <div className="shrink-0 px-4">
+          <AvatarPlayer
+            videoUrl={avatarVideoUrl}
+            loading={avatarLoading}
+            error={avatarError}
+          />
         </div>
       )}
 

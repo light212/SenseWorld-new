@@ -33,7 +33,10 @@ export async function GET(req: NextRequest) {
   }
 
   const supportsSTT = !!speechProvider
-  const supportsTTS = !!speechProvider
 
-  return NextResponse.json({ supportsSTT, supportsTTS, supportsVision })
+  const avatarProvider = await getConfig('AVATAR_PROVIDER')
+  const supportsAvatar = !!avatarProvider
+  const supportsTTS = !!speechProvider && !supportsAvatar
+
+  return NextResponse.json({ supportsSTT, supportsTTS, supportsVision, supportsAvatar })
 }
