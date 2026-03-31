@@ -13,7 +13,7 @@
 | 005 | vision-input | 摄像头截帧组件 + Vision 输入附加到 AI 请求 | ✅ 已完成 |
 | 006 | chat-ui | 前端对话界面（消息列表、流式显示、录音按钮、摄像头预览） | ✅ 已完成 |
 | 007 | mcp-integration | MCP Server 连接层（@modelcontextprotocol/sdk，预留接口） | ✅ 已完成 |
-| 008 | avatar | 数字人视频回复（AvatarProvider 接口 + HeyGen/D-ID 实现，运营可配置） | ⬜ 待开始 |
+| 008 | avatar | 数字人视频回复（AvatarProvider 接口 + HeyGen/D-ID 实现，运营可配置） | ✅ 已完成 |
 
 ## 状态说明
 

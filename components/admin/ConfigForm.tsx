@@ -18,8 +18,10 @@ const CONFIG_KEYS: ConfigKeyDef[] = [
   { key: 'AI_MODEL', label: 'AI 模型', placeholder: 'gpt-4o' },
   { key: 'SPEECH_PROVIDER', label: '语音服务商', placeholder: 'azure / google' },
   { key: 'SPEECH_API_KEY', label: '语音 API Key', placeholder: '...', sensitive: true },
-  { key: 'AVATAR_PROVIDER', label: 'Avatar 服务商（预留）', placeholder: '' },
-  { key: 'AVATAR_API_KEY', label: 'Avatar API Key（预留）', placeholder: '...', sensitive: true },
+  { key: 'AVATAR_PROVIDER', label: 'Avatar 服务商', placeholder: 'heygen / did（留空关闭）' },
+  { key: 'AVATAR_API_KEY', label: 'Avatar API Key', placeholder: '...', sensitive: true },
+  { key: 'AVATAR_ACTOR_ID', label: 'Avatar 形象 ID', placeholder: 'HeyGen avatar_id 或 D-ID source_url' },
+  { key: 'AVATAR_MAX_CHARS', label: 'Avatar 文本上限（字符）', placeholder: '300' },
   { key: 'MCP_SERVER_URL', label: 'MCP Server URL', placeholder: 'http://mcp.internal/query' },
   { key: 'SYSTEM_PROMPT', label: 'System Prompt', placeholder: 'You are a helpful assistant.', multiline: true },
 ];

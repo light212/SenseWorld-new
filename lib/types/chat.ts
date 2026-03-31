@@ -10,6 +10,7 @@ export interface CapabilityFlags {
   supportsSTT: boolean
   supportsTTS: boolean
   supportsVision: boolean
+  supportsAvatar: boolean
 }
 
 export type RecordingState = 'idle' | 'recording' | 'processing'
