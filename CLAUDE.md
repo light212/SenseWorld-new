@@ -101,6 +101,8 @@
 - MySQL 8.0，复用 ChatSession / Message / AccessToken / Config 四张已有表 (003-ai-chat-core)
 - TypeScript 5, Node.js 20 LTS + Next.js 14.2 App Router, `openai` ^6.33.0 (已有), native `fetch` (Azure REST) (004-voice-stt-tts)
 - MySQL via Prisma 5 — `Config` 表（现有）存储语音配置 (004-voice-stt-tts)
+- TypeScript 5, Next.js 14 App Router + React 18, Tailwind CSS（已有）；无新依赖 (007-mcp-integration)
+- MySQL via Prisma（复用 Config 表，键：`MCP_SERVER_URL`） (007-mcp-integration)
 
 ## Recent Changes
 - 001-project-scaffold: Added TypeScript 5.x，Node.js 20 LTS + Next.js 14, Tailwind CSS, shadcn/ui, Prisma ORM, bcryptjs
