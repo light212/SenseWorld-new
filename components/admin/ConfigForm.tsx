@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { ConfigItem } from '@/lib/types/admin';
+import { McpTestButton } from '@/components/admin/McpTestButton';
 
 interface ConfigKeyDef {
   key: string;
@@ -19,6 +20,7 @@ const CONFIG_KEYS: ConfigKeyDef[] = [
   { key: 'SPEECH_API_KEY', label: '语音 API Key', placeholder: '...', sensitive: true },
   { key: 'AVATAR_PROVIDER', label: 'Avatar 服务商（预留）', placeholder: '' },
   { key: 'AVATAR_API_KEY', label: 'Avatar API Key（预留）', placeholder: '...', sensitive: true },
+  { key: 'MCP_SERVER_URL', label: 'MCP Server URL', placeholder: 'http://mcp.internal/query' },
   { key: 'SYSTEM_PROMPT', label: 'System Prompt', placeholder: 'You are a helpful assistant.', multiline: true },
 ];
 
@@ -124,13 +126,20 @@ export default function ConfigForm({ initialConfigs }: Props) {
               className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
             />
           ) : (
-            <input
-              type={sensitive ? 'password' : 'text'}
-              value={getValue(key)}
-              onChange={(e) => handleChange(key, e.target.value)}
-              placeholder={sensitive ? '输入新值以覆盖' : placeholder}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
-            />
+            <>
+              <input
+                type={sensitive ? 'password' : 'text'}
+                value={getValue(key)}
+                onChange={(e) => handleChange(key, e.target.value)}
+                placeholder={sensitive ? '输入新值以覆盖' : placeholder}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+              />
+              {key === 'MCP_SERVER_URL' && (
+                <div className="mt-2">
+                  <McpTestButton currentUrl={getValue(key)} />
+                </div>
+              )}
+            </>
           )}
         </div>
       ))}
