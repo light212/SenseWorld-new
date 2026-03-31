@@ -8,6 +8,35 @@ import { validateToken } from '@/lib/auth/token'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
+export async function GET(req: NextRequest) {
+  const token = req.nextUrl.searchParams.get('token')
+  if (!token) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  }
+  const valid = await validateToken(token)
+  if (!valid) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  }
+
+  const sessionId = req.nextUrl.searchParams.get('sessionId')
+  if (!sessionId) {
+    return NextResponse.json({ sessionId: null, messages: [] })
+  }
+
+  const session = await prisma.chatSession.findUnique({ where: { id: sessionId } })
+  if (!session) {
+    return NextResponse.json({ error: 'session not found' }, { status: 404 })
+  }
+
+  const messages = await prisma.message.findMany({
+    where: { sessionId },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true, role: true, content: true, createdAt: true },
+  })
+
+  return NextResponse.json({ sessionId, messages })
+}
+
 export async function POST(req: NextRequest) {
   // 1. Validate access token
   const token = req.nextUrl.searchParams.get('token')
