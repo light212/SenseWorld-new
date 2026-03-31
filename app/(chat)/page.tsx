@@ -76,8 +76,8 @@ export default function ChatPage() {
     }
   }
 
-  const sendMessage = useCallback(async () => {
-    const text = inputText.trim()
+  const sendMessage = useCallback(async (overrideText?: string) => {
+    const text = (overrideText ?? inputText).trim()
     if (!text || loading) return
 
     stopAudio()
@@ -180,6 +180,7 @@ export default function ChatPage() {
             audioRef.current = audio
             audio.play().catch(() => {})
             audio.onended = () => URL.revokeObjectURL(url)
+            audio.onpause = () => URL.revokeObjectURL(url)
           }
         } catch {
           // silent TTS failure
@@ -239,7 +240,7 @@ export default function ChatPage() {
             token={token}
             recordingState={recordingState}
             onStateChange={setRecordingState}
-            onTranscript={(text) => setInputText((prev) => (prev ? `${prev} ${text}` : text))}
+            onTranscript={(text) => { setInputText(text); sendMessage(text) }}
           />
         )}
       </ChatInputBar>
