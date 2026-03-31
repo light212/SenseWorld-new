@@ -25,7 +25,8 @@ export async function GET(req: NextRequest) {
   if (aiProvider && aiApiKey && aiModel) {
     try {
       const { LLMFactory } = await import('@/lib/ai/factory')
-      const llm = LLMFactory.create(aiProvider, aiApiKey, aiModel)
+      const aiBaseUrl = await getConfig('AI_BASE_URL')
+      const llm = LLMFactory.create(aiProvider, aiApiKey, aiModel, aiBaseUrl ?? undefined)
       supportsVision = llm.supportsVision
     } catch {
       supportsVision = false

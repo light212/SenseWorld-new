@@ -86,11 +86,12 @@ export async function POST(req: NextRequest) {
   // 6. Read AI config
   // getConfig() uses an in-memory cache that is updated synchronously by setConfig().
   // Config changes made via the admin panel take effect on the next request with no restart required.
-  const [aiProvider, aiApiKey, aiModel, systemPrompt] = await Promise.all([
+  const [aiProvider, aiApiKey, aiModel, systemPrompt, aiBaseUrl] = await Promise.all([
     getConfig('AI_PROVIDER'),
     getConfig('AI_API_KEY'),
     getConfig('AI_MODEL'),
     getConfig('SYSTEM_PROMPT'),
+    getConfig('AI_BASE_URL'),
   ])
 
   if (!aiProvider) {
@@ -100,7 +101,7 @@ export async function POST(req: NextRequest) {
   // 7. Create provider
   let provider
   try {
-    provider = LLMFactory.create(aiProvider, aiApiKey ?? '', aiModel ?? '')
+    provider = LLMFactory.create(aiProvider, aiApiKey ?? '', aiModel ?? '', aiBaseUrl ?? undefined)
   } catch {
     return NextResponse.json({ error: 'AI provider not configured' }, { status: 503 })
   }

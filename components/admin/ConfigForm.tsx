@@ -16,6 +16,7 @@ const CONFIG_KEYS: ConfigKeyDef[] = [
   { key: 'AI_PROVIDER', label: 'AI 服务商', placeholder: 'openai / anthropic' },
   { key: 'AI_API_KEY', label: 'AI API Key', placeholder: 'sk-...', sensitive: true },
   { key: 'AI_MODEL', label: 'AI 模型', placeholder: 'gpt-4o' },
+  { key: 'AI_BASE_URL', label: 'AI Base URL（可选）', placeholder: 'https://api.example.com/v1' },
   { key: 'SPEECH_PROVIDER', label: '语音服务商', placeholder: 'azure / google' },
   { key: 'SPEECH_API_KEY', label: '语音 API Key', placeholder: '...', sensitive: true },
   { key: 'AVATAR_PROVIDER', label: 'Avatar 服务商', placeholder: 'heygen / did（留空关闭）' },

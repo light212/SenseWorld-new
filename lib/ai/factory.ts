@@ -16,12 +16,12 @@ export class LLMFactory {
    * @returns LLMProvider 实例
    * @throws 不支持的服务商时抛出错误
    */
-  static create(provider: string, apiKey: string, model: string): LLMProvider {
+  static create(provider: string, apiKey: string, model: string, baseURL?: string): LLMProvider {
     switch (provider) {
       case 'openai':
-        return new OpenAIProvider(apiKey, model)
+        return new OpenAIProvider(apiKey, model, baseURL)
       case 'anthropic':
-        return new AnthropicProvider(apiKey, model)
+        return new AnthropicProvider(apiKey, model, baseURL)
       default:
         throw new Error('AI provider not configured')
     }

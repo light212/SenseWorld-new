@@ -75,7 +75,8 @@
       "Bash(cat /Users/tang/project/ai-project/SenseWorld-new/specs/006-chat-ui/contracts/*.md)",
       "Bash(cat app/\\\\\\(chat\\\\\\)/page.tsx)",
       "Bash(ls node_modules/.bin/tsc*)",
-      "Bash(./node_modules/.bin/tsc --noEmit)"
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(npm test:*)"
     ]
   },
   "skipDangerousModePermissionPrompt": true,
