@@ -16,9 +16,9 @@
 
 **Purpose**: 提取共享 token 校验工具，供所有语音端点复用
 
-- [ ] T001 读取 `app/api/chat/route.ts` 中的 `validateToken()` 内联实现，将其提取到 `lib/auth/token.ts` 并 export
-- [ ] T002 更新 `app/api/chat/route.ts`，将内联 `validateToken()` 替换为 `import { validateToken } from '@/lib/auth/token'`
-- [ ] T003 确认 `app/api/speech/` 目录结构：将现有占位 `app/api/speech/route.ts`（若存在）删除或保留为空，确保 `stt/` 和 `tts/` 子目录路径正确
+- [x] T001 读取 `app/api/chat/route.ts` 中的 `validateToken()` 内联实现，将其提取到 `lib/auth/token.ts` 并 export
+- [x] T002 更新 `app/api/chat/route.ts`，将内联 `validateToken()` 替换为 `import { validateToken } from '@/lib/auth/token'`
+- [x] T003 确认 `app/api/speech/` 目录结构：将现有占位 `app/api/speech/route.ts`（若存在）删除或保留为空，确保 `stt/` 和 `tts/` 子目录路径正确
 
 ---
 
@@ -28,17 +28,17 @@
 
 ⚠️ **CRITICAL**: Phase 3、4 均依赖此阶段完成
 
-- [ ] T004 [P] 实现 `lib/speech/openai-speech-provider.ts`：
+- [x] T004 [P] 实现 `lib/speech/openai-speech-provider.ts`：
   - 实现 `SpeechProvider` 接口
   - `transcribe()`: 使用 `openai.audio.transcriptions.create()` + `toFile()` 将 Buffer 转为 File-like 对象，model: `whisper-1`
   - `synthesize()`: 使用 `openai.audio.speech.create()`，model: `tts-1`，默认 voice: `alloy`（可由 `tts_voice` Config 覆盖），返回 `{ audio: Buffer, mimeType: 'audio/mpeg' }`
   - 构造函数接受 `apiKey: string, voice?: string`
-- [ ] T005 [P] 实现 `lib/speech/azure-speech-provider.ts`：
+- [x] T005 [P] 实现 `lib/speech/azure-speech-provider.ts`：
   - 实现 `SpeechProvider` 接口
   - `transcribe()`: POST `https://{region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=zh-CN`，header: `Ocp-Apim-Subscription-Key`，返回 JSON `{ DisplayText }`
   - `synthesize()`: POST `https://{region}.tts.speech.microsoft.com/cognitiveservices/v1`，SSML body，header: `X-Microsoft-OutputFormat: riff-16khz-16bit-mono-pcm`，返回 `{ audio: Buffer, mimeType: 'audio/wav' }`
   - 构造函数接受 `apiKey: string, region: string, voice?: string`
-- [ ] T006 更新 `lib/speech/factory.ts`：取消注释 `case 'openai'` 和 `case 'azure'`，import 两个 Provider，从 `SpeechFactory.create()` 参数中传入 voice
+- [x] T006 更新 `lib/speech/factory.ts`：取消注释 `case 'openai'` 和 `case 'azure'`，import 两个 Provider，从 `SpeechFactory.create()` 参数中传入 voice
 
 **Checkpoint**: 此阶段完成后，`SpeechFactory.create('openai', apiKey)` 和 `SpeechFactory.create('azure', apiKey, region)` 可正常实例化
 
@@ -58,7 +58,7 @@ curl -X POST "http://localhost:3000/api/speech/stt?token=<valid_token>" \
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] 创建 `app/api/speech/stt/route.ts`：
+- [x] T007 [US1] 创建 `app/api/speech/stt/route.ts`：
   - `export const dynamic = 'force-dynamic'`
   - `export const runtime = 'nodejs'`
   - token 校验：`import { validateToken } from '@/lib/auth/token'`，query param `token`，失败返回 401
@@ -90,7 +90,7 @@ curl -X POST "http://localhost:3000/api/speech/tts?token=<valid_token>" \
 
 ### Implementation for User Story 2
 
-- [ ] T008 [US2] 创建 `app/api/speech/tts/route.ts`：
+- [x] T008 [US2] 创建 `app/api/speech/tts/route.ts`：
   - `export const dynamic = 'force-dynamic'`
   - `export const runtime = 'nodejs'`
   - token 校验：同 T007，失败返回 401
@@ -115,8 +115,8 @@ curl -X POST "http://localhost:3000/api/speech/tts?token=<valid_token>" \
 
 ### Implementation for User Story 3
 
-- [ ] T009 [US3] 验证 `lib/config.ts` 的 `getConfig()` 函数每次请求从 DB 读取（无内存缓存），确保切换服务商后立即生效；若有缓存则记录此 open question
-- [ ] T010 [P] [US3] 在运营后台配置面板（`app/admin/` 相关页面）确认 `speech_provider`、`speech_api_key`、`speech_region`、`tts_voice` 这 4 个 Config key 已可通过现有配置 UI 写入（feature 002 实现的通用 Config 面板应已支持，仅验证无需新增 UI）
+- [x] T009 [US3] 验证 `lib/config.ts` 的 `getConfig()` 函数每次请求从 DB 读取（无内存缓存），确保切换服务商后立即生效；若有缓存则记录此 open question
+- [x] T010 [P] [US3] 在运营后台配置面板（`app/admin/` 相关页面）确认 `speech_provider`、`speech_api_key`、`speech_region`、`tts_voice` 这 4 个 Config key 已可通过现有配置 UI 写入（feature 002 实现的通用 Config 面板应已支持，仅验证无需新增 UI）
 
 **Checkpoint**: 运营配置切换后，下一次 STT/TTS 请求使用新服务商
 
@@ -124,10 +124,10 @@ curl -X POST "http://localhost:3000/api/speech/tts?token=<valid_token>" \
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T011 检查并处理 `app/api/speech/route.ts` 占位文件：若存在且为空/无用，删除之；确保 Next.js 路由不冲突（`/api/speech` vs `/api/speech/stt`、`/api/speech/tts`）
-- [ ] T012 [P] 验证 `lib/auth/token.ts` 提取后 `/api/chat` 端点功能正常（手动测试 chat 仍可用）
-- [ ] T013 运行 `pnpm build` 确认无 TypeScript 类型错误和构建失败
-- [ ] T014 验证 `/api/health` 端点仍正常（constitution 要求）
+- [x] T011 检查并处理 `app/api/speech/route.ts` 占位文件：若存在且为空/无用，删除之；确保 Next.js 路由不冲突（`/api/speech` vs `/api/speech/stt`、`/api/speech/tts`）
+- [x] T012 [P] 验证 `lib/auth/token.ts` 提取后 `/api/chat` 端点功能正常（手动测试 chat 仍可用）
+- [x] T013 运行 `pnpm build` 确认无 TypeScript 类型错误和构建失败
+- [x] T014 验证 `/api/health` 端点仍正常（constitution 要求）
 
 ---
 
