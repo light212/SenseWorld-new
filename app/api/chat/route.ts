@@ -20,13 +20,13 @@ export async function POST(req: NextRequest) {
   }
 
   // 2. Parse and validate request body
-  let body: { sessionId?: string; message?: string }
+  let body: { sessionId?: string; message?: string; images?: string[] }
   try {
     body = await req.json()
   } catch {
     return NextResponse.json({ error: 'message is required' }, { status: 400 })
   }
-  const { sessionId, message } = body
+  const { sessionId, message, images } = body
   if (!message || message.trim() === '') {
     return NextResponse.json({ error: 'message is required' }, { status: 400 })
   }
@@ -68,20 +68,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'AI provider not configured' }, { status: 503 })
   }
 
-  // 7. Build messages for LLM
-  const chatMessages: ChatMessage[] = [
-    ...(systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : []),
-    ...history.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-    { role: 'user' as const, content: message },
-  ]
-
-  // 8. Create provider
+  // 7. Create provider
   let provider
   try {
     provider = LLMFactory.create(aiProvider, aiApiKey ?? '', aiModel ?? '')
   } catch {
     return NextResponse.json({ error: 'AI provider not configured' }, { status: 503 })
   }
+
+  // 8. Build messages for LLM
+  const imageBase64 = provider.supportsVision && images?.[0] ? images[0] : undefined
+  const chatMessages: ChatMessage[] = [
+    ...(systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : []),
+    ...history.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+    { role: 'user' as const, content: message, ...(imageBase64 ? { imageBase64 } : {}) },
+  ]
 
   // 9. Stream SSE response
   const encoder = new TextEncoder()

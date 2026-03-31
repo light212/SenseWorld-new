@@ -1,8 +1,22 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { LLMProvider, ChatMessage } from './types'
 
+type AnthropicContent =
+  | { type: 'text'; text: string }
+  | { type: 'image'; source: { type: 'base64'; media_type: 'image/jpeg'; data: string } }
+
+function buildAnthropicContent(msg: ChatMessage, isLatestUser: boolean): string | AnthropicContent[] {
+  if (isLatestUser && msg.imageBase64) {
+    return [
+      { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: msg.imageBase64 } },
+      { type: 'text', text: msg.content },
+    ]
+  }
+  return msg.content
+}
+
 export class AnthropicProvider implements LLMProvider {
-  readonly supportsVision = false
+  readonly supportsVision = true
   readonly supportsNativeAudio = false
 
   private client: Anthropic
@@ -14,12 +28,15 @@ export class AnthropicProvider implements LLMProvider {
   }
 
   async chat(messages: ChatMessage[]): Promise<string> {
+    const nonSystem = messages.filter((m) => m.role !== 'system')
+    const lastUserIdx = nonSystem.map((m) => m.role).lastIndexOf('user')
     const response = await this.client.messages.create({
       model: this.model,
       max_tokens: 4096,
-      messages: messages
-        .filter((m) => m.role !== 'system')
-        .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+      messages: nonSystem.map((m, i) => ({
+        role: m.role as 'user' | 'assistant',
+        content: buildAnthropicContent(m, i === lastUserIdx),
+      })),
     })
     const block = response.content[0]
     return block?.type === 'text' ? block.text : ''
@@ -27,15 +44,17 @@ export class AnthropicProvider implements LLMProvider {
 
   async *chatStream(messages: ChatMessage[]): AsyncIterable<string> {
     const systemMsg = messages.find((m) => m.role === 'system')
-    const nonSystemMsgs = messages
-      .filter((m) => m.role !== 'system')
-      .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }))
+    const nonSystem = messages.filter((m) => m.role !== 'system')
+    const lastUserIdx = nonSystem.map((m) => m.role).lastIndexOf('user')
 
     const stream = this.client.messages.stream({
       model: this.model,
       max_tokens: 4096,
       ...(systemMsg ? { system: systemMsg.content } : {}),
-      messages: nonSystemMsgs,
+      messages: nonSystem.map((m, i) => ({
+        role: m.role as 'user' | 'assistant',
+        content: buildAnthropicContent(m, i === lastUserIdx),
+      })),
     })
 
     for await (const event of stream) {
