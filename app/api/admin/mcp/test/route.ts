@@ -16,14 +16,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 
-  let body: { url?: string }
+  let body: { url?: string, apiKey?: string }
   try {
     body = await req.json()
   } catch {
     return NextResponse.json({ error: 'url is required' }, { status: 400 })
   }
 
-  const { url } = body
+  const { url, apiKey } = body
   if (!url || typeof url !== 'string' || !url.trim()) {
     return NextResponse.json({ error: 'url is required' }, { status: 400 })
   }
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   // Validate protocol via HttpMCPClient.connect(), then probe reachability with a minimal request
   const client = new HttpMCPClient()
   try {
-    await client.connect(url.trim())
+    await client.connect(url.trim(), apiKey)
   } catch (err) {
     const message = err instanceof Error ? err.message : '地址无效'
     return NextResponse.json({ success: false, message })
@@ -40,9 +40,14 @@ export async function POST(req: NextRequest) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 5000)
   try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (apiKey) {
+      headers['Authorization'] = `Bearer ${apiKey}`
+    }
+
     const res = await fetch(url.trim(), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ query: '' }),
       signal: controller.signal,
     })

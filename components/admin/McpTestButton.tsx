@@ -6,7 +6,7 @@ import clsx from 'clsx'
 
 type MCPTestState = 'idle' | 'loading' | 'success' | 'error'
 
-export function McpTestButton({ currentUrl }: { currentUrl: string }) {
+export function McpTestButton({ currentUrl, currentApiKey }: { currentUrl: string, currentApiKey: string }) {
   const [state, setState] = useState<MCPTestState>('idle')
   const [message, setMessage] = useState('')
 
@@ -17,7 +17,7 @@ export function McpTestButton({ currentUrl }: { currentUrl: string }) {
       const res = await fetch('/api/admin/mcp/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: currentUrl }),
+        body: JSON.stringify({ url: currentUrl, apiKey: currentApiKey }),
       })
       const data = await res.json()
       if (data.success) {

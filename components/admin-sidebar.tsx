@@ -22,6 +22,7 @@ export function AdminSidebar() {
       await fetch('/api/admin/auth/logout', { method: 'POST' });
     } finally {
       router.push('/admin/login');
+      setLoggingOut(false);
     }
   }
 

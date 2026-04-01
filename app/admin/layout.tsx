@@ -1,7 +1,16 @@
+'use client';
+
 import type { ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { AdminSidebar } from '@/components/admin-sidebar';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+
+  if (pathname === '/admin/login') {
+    return <>{children}</>;
+  }
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-slate-50/50">
       <AdminSidebar />

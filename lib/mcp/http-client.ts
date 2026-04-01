@@ -6,9 +6,9 @@ const ALLOWED_PROTOCOLS = ['http:', 'https:']
 
 export class HttpMCPClient implements MCPClient {
   private serverUrl: string | null = null
-  private connected = false
+  private apiKey: string | null = null
 
-  async connect(serverUrl: string): Promise<void> {
+  async connect(serverUrl: string, apiKey?: string): Promise<void> {
     let parsed: URL
     try {
       parsed = new URL(serverUrl)
@@ -19,6 +19,7 @@ export class HttpMCPClient implements MCPClient {
       throw new Error(`地址格式无效，仅支持 http/https`)
     }
     this.serverUrl = serverUrl
+    this.apiKey = apiKey || null
     this.connected = true
   }
 
@@ -31,9 +32,14 @@ export class HttpMCPClient implements MCPClient {
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (this.apiKey) {
+        headers['Authorization'] = `Bearer ${this.apiKey}`
+      }
+
       const res = await fetch(this.serverUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ query: prompt }),
         signal: controller.signal,
       })
@@ -60,6 +66,7 @@ export class HttpMCPClient implements MCPClient {
 
   async disconnect(): Promise<void> {
     this.serverUrl = null
+    this.apiKey = null
     this.connected = false
   }
 

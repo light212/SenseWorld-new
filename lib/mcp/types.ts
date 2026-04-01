@@ -6,7 +6,7 @@
  */
 export interface MCPClient {
   /** 连接到 MCP Server */
-  connect(serverUrl: string): Promise<void>
+  connect(serverUrl: string, apiKey?: string): Promise<void>
 
   /** 断开连接 */
   disconnect(): Promise<void>

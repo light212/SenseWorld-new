@@ -53,6 +53,7 @@ const GROUPS = [
     description: '通过 Model Context Protocol 挂载公司私有知识库或外部函数栈。',
     keys: [
       { key: 'MCP_SERVER_URL', label: '局域网 MCP 工具解析 Endpoint', placeholder: 'http://mcp.internal/query' },
+      { key: 'MCP_API_KEY', label: 'MCP 鉴权机密凭证', placeholder: '留下空白则为无鉴权访问...', sensitive: true },
     ]
   }
 ];
@@ -231,7 +232,7 @@ export default function ConfigForm({ initialConfigs }: Props) {
                        />
                        {key === 'MCP_SERVER_URL' && (
                          <div className="mt-4">
-                           <McpTestButton currentUrl={getValue(key)} />
+                           <McpTestButton currentUrl={getValue(key)} currentApiKey={getValue('MCP_API_KEY')} />
                          </div>
                        )}
                      </div>

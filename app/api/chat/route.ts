@@ -22,7 +22,8 @@ export async function POST(req: Request) {
       aiModel,
       aiBaseUrl,
       systemPrompt,
-      mcpServerUrl
+      mcpServerUrl,
+      mcpApiKey
     ] = await Promise.all([
       getConfig('AI_PROVIDER'),
       getConfig('AI_API_KEY'),
@@ -30,6 +31,7 @@ export async function POST(req: Request) {
       getConfig('AI_BASE_URL'),
       getConfig('SYSTEM_PROMPT'),
       getConfig('MCP_SERVER_URL'),
+      getConfig('MCP_API_KEY'),
     ]);
 
     if (!aiProvider || !aiApiKey) return NextResponse.json({ error: 'AI provider not configured' }, { status: 503 });
@@ -82,7 +84,7 @@ export async function POST(req: Request) {
           console.log(`[MCP] querying ${mcpServerUrl} with: ${userQuery.slice(0, 80)}…`);
           const { MCPClientFactory } = await import('@/lib/mcp/factory');
           const mcpClient = MCPClientFactory.create();
-          await mcpClient.connect(mcpServerUrl);
+          await mcpClient.connect(mcpServerUrl, mcpApiKey);
           const mcpResult = await mcpClient.query(userQuery);
           await mcpClient.disconnect();
 
