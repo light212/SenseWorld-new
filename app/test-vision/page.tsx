@@ -85,7 +85,7 @@ export default function TestVisionPage() {
         )}
       </div>
 
-      <CameraCapture ref={cameraRef} onError={(msg) => setError(msg)} />
+      <CameraCapture ref={cameraRef} isActive={true} onError={(msg) => setError(msg)} />
 
       {error && (
         <div className="text-red-600 text-sm border border-red-300 rounded p-2">{error}</div>

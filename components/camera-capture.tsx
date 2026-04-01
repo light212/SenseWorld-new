@@ -55,7 +55,7 @@ const CameraCapture = forwardRef<CameraCaptureRef, CameraCaptureProps>(function 
 
   useEffect(() => {
     if (isActive) {
-      async function start() {
+      const start = async () => {
         try {
           setIsReady(false)
           const stream = await navigator.mediaDevices.getUserMedia({ video: true })

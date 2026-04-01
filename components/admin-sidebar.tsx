@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import clsx from 'clsx';
-import { Settings, KeyRound, Command } from 'lucide-react';
+import { Settings, KeyRound, Command, LogOut } from 'lucide-react';
+import { useState } from 'react';
 
 const navItems = [
   { href: '/admin/config', label: '系统运维', icon: Settings },
@@ -12,6 +13,17 @@ const navItems = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    try {
+      await fetch('/api/admin/auth/logout', { method: 'POST' });
+    } finally {
+      router.push('/admin/login');
+    }
+  }
 
   if (pathname === '/admin/login') return null;
 
@@ -62,17 +74,25 @@ export function AdminSidebar() {
           })}
         </nav>
 
-        {/* User Profile */}
-        <div className="px-4 mt-auto">
+        {/* User Profile + Logout */}
+        <div className="px-4 mt-auto space-y-2">
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100/60 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold overflow-hidden">
+            <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold overflow-hidden shrink-0">
               <img src="https://api.dicebear.com/7.x/notionists/svg?seed=Admin&backgroundColor=f8fafc" alt="Avatar" className="w-full h-full object-cover" />
             </div>
-            <div className="overflow-hidden">
+            <div className="overflow-hidden flex-1">
               <p className="text-[13px] font-bold text-slate-900 truncate">超级管理员</p>
               <p className="text-[11px] font-medium text-slate-400 truncate">最高系统权限</p>
             </div>
           </div>
+          <button
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl text-[13px] font-bold tracking-wider text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all duration-200 disabled:opacity-50"
+          >
+            <LogOut size={16} strokeWidth={2.5} />
+            {loggingOut ? '退出中...' : '退出登录'}
+          </button>
         </div>
       </div>
     </aside>
