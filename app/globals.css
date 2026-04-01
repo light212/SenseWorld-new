@@ -3,25 +3,47 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Minimal luxury palette - High contrast OKLCH */
+  --background: oklch(0.99 0 0); /* Ultra subtle off-white #FAFAFA */
+  --foreground: oklch(0.20 0.02 260);  /* slate-900 / dark graphite */
+  --primary: oklch(0.3 0 0);     /* Deep dark primary */
+  --muted: oklch(0.55 0.01 260);   /* slate-500 equivalent */
+  
+  /* Precision Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(0, 0, 0, 0.04);
+  --glass-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.03);
+  --glass-hover: rgba(255, 255, 255, 0.95);
 }
 
 body {
   color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--background);
+  /* Editorial, crisp typography stack prioritizing readability and geometry */
+  font-family: 'SF Pro Display', 'Helvetica Neue', 'Helvetica', 'Arial', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: 0.01em;
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  
+  /* Advanced glass panel with zero layout shift */
+  .glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    transition: background 200ms ease, box-shadow 200ms ease;
+  }
+  
+  .glass-panel:hover {
+    background: var(--glass-hover);
+    box-shadow: 0 16px 40px -4px rgba(0, 0, 0, 0.04);
   }
 }

@@ -1,179 +1,48 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
-import { getConfig } from '@/lib/config'
-import { LLMFactory } from '@/lib/ai/factory'
-import type { ChatMessage } from '@/lib/ai/types'
-import { validateToken } from '@/lib/auth/token'
+import { createOpenAI } from '@ai-sdk/openai';
+import { streamText } from 'ai';
 
-export const dynamic = 'force-dynamic'
-export const runtime = 'nodejs'
+export const maxDuration = 30; // 30 second timeout for Vercel
 
-export async function GET(req: NextRequest) {
-  const token = req.nextUrl.searchParams.get('token')
-  if (!token) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  }
-  const valid = await validateToken(token)
-  if (!valid) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  }
-
-  const sessionId = req.nextUrl.searchParams.get('sessionId')
-  if (!sessionId) {
-    return NextResponse.json({ sessionId: null, messages: [] })
-  }
-
-  const session = await prisma.chatSession.findUnique({ where: { id: sessionId } })
-  if (!session) {
-    return NextResponse.json({ error: 'session not found' }, { status: 404 })
-  }
-
-  const messages = await prisma.message.findMany({
-    where: { sessionId },
-    orderBy: { createdAt: 'asc' },
-    select: { id: true, role: true, content: true, createdAt: true },
-  })
-
-  return NextResponse.json({ sessionId, messages })
-}
-
-export async function POST(req: NextRequest) {
-  // 1. Validate access token
-  const token = req.nextUrl.searchParams.get('token')
-  if (!token) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  }
-  const valid = await validateToken(token)
-  if (!valid) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  }
-
-  // 2. Parse and validate request body
-  let body: { sessionId?: string; message?: string; images?: string[] }
+export async function POST(req: Request) {
   try {
-    body = await req.json()
-  } catch {
-    return NextResponse.json({ error: 'message is required' }, { status: 400 })
-  }
-  const { sessionId, message, images } = body
-  if (!message || message.trim() === '') {
-    return NextResponse.json({ error: 'message is required' }, { status: 400 })
-  }
+    const { messages } = await req.json();
 
-  // 3. Resolve or create session
-  let session: { id: string }
-  if (sessionId) {
-    const existing = await prisma.chatSession.findUnique({ where: { id: sessionId } })
-    if (!existing) {
-      return NextResponse.json({ error: 'session not found' }, { status: 404 })
-    }
-    session = existing
-  } else {
-    session = await prisma.chatSession.create({ data: { accessToken: token } })
-  }
+    // Clean the incoming messages to ensure compatibility (remove new 'parts' array if present)
+    const cleanMessages = messages.map((m: { role: string; content?: string }) => ({
+      role: m.role,
+      content: typeof m.content === 'string' ? m.content : (m.content || ''),
+    }));
 
-  // 4. Load history
-  const history = await prisma.message.findMany({
-    where: { sessionId: session.id },
-    orderBy: { createdAt: 'asc' },
-  })
+    // Create a custom provider relying on SenseWorld's .env configurations
+    const customOpenAI = createOpenAI({
+      apiKey: process.env.AI_API_KEY || process.env.OPENAI_API_KEY || '',
+      baseURL: process.env.AI_BASE_URL || process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
+    });
 
-  // 5. Save user message
-  await prisma.message.create({
-    data: { sessionId: session.id, role: 'user', content: message },
-  })
+    const modelName = process.env.AI_MODEL || 'gpt-4o';
 
-  // 6. Read AI config
-  // getConfig() uses an in-memory cache that is updated synchronously by setConfig().
-  // Config changes made via the admin panel take effect on the next request with no restart required.
-  const [aiProvider, aiApiKey, aiModel, systemPrompt, aiBaseUrl] = await Promise.all([
-    getConfig('AI_PROVIDER'),
-    getConfig('AI_API_KEY'),
-    getConfig('AI_MODEL'),
-    getConfig('SYSTEM_PROMPT'),
-    getConfig('AI_BASE_URL'),
-  ])
+    const result = await streamText({
+      model: customOpenAI(modelName),
+      system: 'You are SenseWorld AI, an advanced multi-modal enterprise platform assistant. You respond in markdown and maintain a professional, academic, yet approachable tone. Format lists cleanly. If asked to design something or provide code, do so elegantly. Always respond in the language the user is speaking in, typically Chinese.',
+      messages: cleanMessages,
+    });
 
-  if (!aiProvider) {
-    return NextResponse.json({ error: 'AI provider not configured' }, { status: 503 })
-  }
-
-  // 7. Create provider
-  let provider
-  try {
-    provider = LLMFactory.create(aiProvider, aiApiKey ?? '', aiModel ?? '', aiBaseUrl ?? undefined)
-  } catch {
-    return NextResponse.json({ error: 'AI provider not configured' }, { status: 503 })
-  }
-
-  // 8. Query MCP Server for additional context (silent fallback on failure)
-  let mcpContext = ''
-  const mcpServerUrl = await getConfig('MCP_SERVER_URL')
-  if (mcpServerUrl) {
-    try {
-      const { MCPClientFactory } = await import('@/lib/mcp/factory')
-      const mcpClient = MCPClientFactory.create()
-      await mcpClient.connect(mcpServerUrl)
-      mcpContext = await mcpClient.query(message)
-      await mcpClient.disconnect()
-    } catch {
-      // silent degradation
-    }
-  }
-  const effectiveSystemPrompt = mcpContext
-    ? `${systemPrompt ?? ''}\n\n--- Knowledge Base Context ---\n${mcpContext}`.trim()
-    : systemPrompt
-
-  // 9. Build messages for LLM
-  const imageBase64 = provider.supportsVision && images?.[0] ? images[0] : undefined
-  const chatMessages: ChatMessage[] = [
-    ...(effectiveSystemPrompt ? [{ role: 'system' as const, content: effectiveSystemPrompt }] : []),
-    ...history.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-    { role: 'user' as const, content: message, ...(imageBase64 ? { imageBase64 } : {}) },
-  ]
-
-  // 9. Stream SSE response
-  const encoder = new TextEncoder()
-  let assistantContent = ''
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      try {
-        for await (const chunk of provider.chatStream(chatMessages)) {
-          assistantContent += chunk
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ text: chunk })}\n\n`)
-          )
-        }
-        controller.enqueue(encoder.encode('data: [DONE]\n\n'))
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : 'unknown error'
-        controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ error: `LLM provider error: ${msg}` })}\n\n`)
-        )
-        controller.enqueue(encoder.encode('data: [DONE]\n\n'))
-      } finally {
-        controller.close()
-        // 10. Persist assistant message asynchronously
-        if (assistantContent) {
-          prisma.message
-            .create({
-              data: { sessionId: session.id, role: 'assistant', content: assistantContent },
-            })
-            .catch((e) => console.error('Failed to save assistant message:', e))
-        }
+    // @ts-expect-error - Ensure we force the data stream encoding that useChat expects instead of plaintext
+    return result.toDataStreamResponse ? result.toDataStreamResponse() : result.toTextStreamResponse();
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('AI Stream Error:', err);
+    // Return a visible error to the client instead of the opaque "An error occurred."
+    return new Response(
+      JSON.stringify({ 
+        error: err?.message || 'Unknown Server Error',
+        name: err?.name,
+        cause: err?.cause 
+      }), 
+      { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
       }
-    },
-  })
-
-  return new Response(stream, {
-    status: 200,
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache, no-transform',
-      Connection: 'keep-alive',
-      'X-Accel-Buffering': 'no',
-      'X-Session-Id': session.id,
-    },
-  })
+    );
+  }
 }

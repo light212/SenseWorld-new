@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import QrCodeDisplay from '@/components/admin/QrCodeDisplay';
 import type { AccessTokenItem } from '@/lib/types/admin';
+import clsx from 'clsx';
+import { Copy, Check, QrCode, Plus } from 'lucide-react';
 
 interface Props {
   initialTokens: AccessTokenItem[];
@@ -16,12 +18,11 @@ export default function AccessTokenList({ initialTokens, baseUrl }: Props) {
   const [isPermanent, setIsPermanent] = useState(true);
   const [creating, setCreating] = useState(false);
   const [qrTarget, setQrTarget] = useState<string | null>(null);
-  const [message, setMessage] = useState('');
+  const [copiedId, setCopiedId] = useState<number | null>(null);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setCreating(true);
-    setMessage('');
 
     try {
       const res = await fetch('/api/admin/access-tokens', {
@@ -38,12 +39,11 @@ export default function AccessTokenList({ initialTokens, baseUrl }: Props) {
         setLabel('');
         setExpiresAt('');
         setIsPermanent(true);
-        setMessage('链接已生成');
       } else {
-        setMessage(data.error ?? '生成失败');
+        alert(`❌ ${data.error ?? '无法注册该凭证'}`);
       }
     } catch {
-      setMessage('网络错误，请重试');
+      alert('❌ 网络中断，请检查局域网连接');
     } finally {
       setCreating(false);
     }
@@ -62,6 +62,7 @@ export default function AccessTokenList({ initialTokens, baseUrl }: Props) {
   }
 
   async function handleDelete(id: number) {
+    if (!confirm('物理擦除不可逆，是否继续？')) return;
     const res = await fetch(`/api/admin/access-tokens/${id}`, { method: 'DELETE' });
     const data = await res.json();
     if (data.ok) {
@@ -70,126 +71,210 @@ export default function AccessTokenList({ initialTokens, baseUrl }: Props) {
     }
   }
 
-  function isExpired(expiresAt: string | null): boolean {
-    if (!expiresAt) return false;
-    return new Date(expiresAt) <= new Date();
+  const handleCopy = (id: number, url: string) => {
+    navigator.clipboard.writeText(url);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  function isExpired(expAt: string | null): boolean {
+    if (!expAt) return false;
+    return new Date(expAt) <= new Date();
   }
 
   function tokenUrl(token: string): string {
     return `${baseUrl}/?token=${token}`;
   }
 
-  return (
-    <div className="space-y-8 max-w-3xl">
-      <form onSubmit={handleCreate} className="bg-white border border-gray-200 rounded-lg p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-gray-800">生成新链接</h2>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">备注名称（可选）</label>
-          <input
-            type="text"
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            placeholder="如：展会入口"
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">有效期</label>
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-1.5 text-sm">
-              <input
-                type="radio"
-                checked={isPermanent}
-                onChange={() => setIsPermanent(true)}
-              />
-              永久有效
-            </label>
-            <label className="flex items-center gap-1.5 text-sm">
-              <input
-                type="radio"
-                checked={!isPermanent}
-                onChange={() => setIsPermanent(false)}
-              />
-              指定到期时间
-            </label>
-          </div>
-          {!isPermanent && (
-            <input
-              type="datetime-local"
-              value={expiresAt}
-              onChange={(e) => setExpiresAt(e.target.value)}
-              required
-              className="mt-2 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
-            />
-          )}
-        </div>
-        {message && (
-          <p className={`text-sm ${message.includes('已生成') ? 'text-green-600' : 'text-red-600'}`}>{message}</p>
-        )}
-        <button
-          type="submit"
-          disabled={creating}
-          className="bg-gray-900 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-gray-700 disabled:opacity-50"
-        >
-          {creating ? '生成中...' : '生成链接'}
-        </button>
-      </form>
+  const inputStyles = "w-full bg-transparent border-b border-slate-200 py-3 text-[15px] text-slate-900 focus:outline-none focus:border-slate-900 transition-colors placeholder:text-slate-300 font-bold";
 
-      <div className="space-y-3">
-        {tokens.length === 0 && (
-          <p className="text-sm text-gray-400">暂无访客链接</p>
-        )}
-        {tokens.map((t) => {
-          const expired = isExpired(t.expiresAt);
-          const url = tokenUrl(t.token);
-          return (
-            <div key={t.id} className="bg-white border border-gray-200 rounded-lg p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {t.label && <span className="text-sm font-medium text-gray-800">{t.label}</span>}
-                  {expired && (
-                    <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded">已过期</span>
-                  )}
-                  {!t.enabled && !expired && (
-                    <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">已禁用</span>
-                  )}
-                  {t.enabled && !expired && (
-                    <span className="text-xs bg-green-100 text-green-600 px-1.5 py-0.5 rounded">有效</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
+  return (
+    <div className="@container w-full animate-in fade-in duration-500 max-w-7xl">
+      
+      {/* Top Header */}
+      <div className="flex flex-col @3xl:flex-row @3xl:items-end justify-between gap-6 mb-12">
+        <div className="max-w-2xl">
+           <h2 className="text-3xl font-bold text-slate-900 tracking-tight">访问控制</h2>
+           <p className="text-[11px] font-bold text-slate-400 mt-2 uppercase tracking-widest">网络端点与凭证分发</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 @4xl:grid-cols-[300px_1fr] gap-12 @6xl:gap-24 relative">
+        
+        {/* Left Form: Create Endpoint */}
+        <div className="flex flex-col gap-6 sticky top-8 h-fit pb-12">
+          <div className="border border-slate-200 bg-white p-6 shadow-sm z-10">
+            <h3 className="text-sm font-bold text-slate-900 tracking-wide mb-6 flex items-center gap-2">
+              <Plus className="w-4 h-4" /> 颁发新网关节点
+            </h3>
+
+            <form onSubmit={handleCreate} className="space-y-6">
+              <div>
+                <label className="block text-[11px] font-bold tracking-widest text-slate-500 mb-1">隧道标签 (备注名)</label>
+                <input
+                  type="text"
+                  value={label}
+                  onChange={(e) => setLabel(e.target.value)}
+                  placeholder="如：第二会议室中控"
+                  className={inputStyles}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold tracking-widest text-slate-500 mb-2">生命周期 (TTL)</label>
+                <div className="flex items-center p-1 bg-slate-100/80 rounded w-full">
                   <button
-                    onClick={() => setQrTarget(qrTarget === t.token ? null : t.token)}
-                    className="text-xs text-blue-600 hover:underline"
+                    type="button"
+                    onClick={() => setIsPermanent(true)}
+                    className={clsx("flex-1 px-2 py-1.5 text-[11px] font-bold tracking-widest transition-all", isPermanent ? "bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.05)]" : "text-slate-400 hover:text-slate-600")}
                   >
-                    {qrTarget === t.token ? '收起二维码' : '查看二维码'}
+                    无期限配置
                   </button>
                   <button
-                    onClick={() => handleToggle(t.id, !t.enabled)}
-                    className="text-xs text-gray-600 hover:underline"
+                    type="button"
+                    onClick={() => setIsPermanent(false)}
+                    className={clsx("flex-1 px-2 py-1.5 text-[11px] font-bold tracking-widest transition-all", !isPermanent ? "bg-white text-slate-900 shadow-[0_1px_4px_rgba(0,0,0,0.05)]" : "text-slate-400 hover:text-slate-600")}
                   >
-                    {t.enabled ? '禁用' : '启用'}
-                  </button>
-                  <button
-                    onClick={() => handleDelete(t.id)}
-                    className="text-xs text-red-500 hover:underline"
-                  >
-                    删除
+                    限时销毁约束
                   </button>
                 </div>
               </div>
-              <p className="text-xs text-gray-400 break-all">{url}</p>
-              <p className="text-xs text-gray-400">
-                {t.expiresAt ? `到期：${new Date(t.expiresAt).toLocaleString('zh-CN')}` : '永久有效'}
-              </p>
-              {qrTarget === t.token && (
-                <div className="pt-2">
-                  <QrCodeDisplay value={url} />
+
+              {!isPermanent && (
+                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                  <label className="block text-[11px] font-bold tracking-widest text-slate-500 mb-1">失效时间限制</label>
+                  <input
+                    type="datetime-local"
+                    value={expiresAt}
+                    onChange={(e) => setExpiresAt(e.target.value)}
+                    required
+                    className={inputStyles}
+                  />
                 </div>
               )}
-            </div>
-          );
-        })}
+
+              <button
+                type="submit"
+                disabled={creating}
+                className="w-full bg-slate-900 text-white py-4 mt-2 hover:bg-slate-800 transition-colors text-[13px] font-bold tracking-widest disabled:opacity-50 flex items-center justify-center gap-3"
+              >
+                {creating ? '节点装配中...' : '部署并下发令牌'}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Right Content: Endpoints Table */}
+        <div className="flex flex-col gap-8 relative z-0">
+           <div className="pb-6 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-slate-900 tracking-tight">全网活跃节点</h3>
+              <span className="text-[11px] font-bold tracking-widest bg-slate-100 text-slate-500 px-3 py-1 rounded-full">已登记 {tokens.length} 项</span>
+           </div>
+           
+           <div className="w-full overflow-x-auto">
+             <table className="w-full text-left text-sm whitespace-nowrap">
+               <thead>
+                 <tr>
+                   <th className="pb-4 pt-2 px-2 text-[11px] font-bold tracking-widest text-slate-400 border-b border-slate-200">寻址标识号</th>
+                   <th className="pb-4 pt-2 px-2 text-[11px] font-bold tracking-widest text-slate-400 border-b border-slate-200">物理位置标识</th>
+                   <th className="pb-4 pt-2 px-2 text-[11px] font-bold tracking-widest text-slate-400 border-b border-slate-200">拦截器状态</th>
+                   <th className="pb-4 pt-2 px-2 text-[11px] font-bold tracking-widest text-slate-400 border-b border-slate-200">终端长连接地址码</th>
+                   <th className="pb-4 pt-2 px-2 text-[11px] font-bold tracking-widest text-slate-400 border-b border-slate-200 text-right">人工越权</th>
+                 </tr>
+               </thead>
+               <tbody className="divide-y divide-slate-100 text-slate-900">
+                 {tokens.length === 0 && (
+                   <tr>
+                     <td colSpan={5} className="py-16 text-center text-slate-400 font-bold tracking-widest text-[12px]">
+                       安全网关无负载，当前未颁发任何准入凭据。
+                     </td>
+                   </tr>
+                 )}
+                 {tokens.map((t) => {
+                   const expired = isExpired(t.expiresAt);
+                   const url = tokenUrl(t.token);
+                   
+                   const statusClass = expired 
+                     ? 'bg-rose-50 text-rose-600' 
+                     : (!t.enabled ? 'bg-slate-100 text-slate-400' : 'bg-emerald-50 text-emerald-600');
+                   const statusText = expired ? '时间超限' : (!t.enabled ? '人为熔断' : '安全合规');
+
+                   return (
+                     <tr key={t.id} className="group transition-colors hover:bg-slate-50">
+                       <td className="px-2 py-5 font-mono text-[13px] font-semibold text-slate-400">
+                         #{t.id}
+                       </td>
+                       <td className="px-2 py-5">
+                         <div className="flex flex-col gap-1">
+                           <span className="font-bold text-[14px]">
+                             {t.label || <span className="text-slate-300 font-medium italic">未标记的终端节点</span>}
+                           </span>
+                           <span className="text-[11px] tracking-widest text-slate-400 font-bold">
+                             {t.expiresAt ? new Date(t.expiresAt).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '∞ 无限期授权'}
+                           </span>
+                         </div>
+                       </td>
+                       <td className="px-2 py-5">
+                         <span className={clsx("text-[9px] font-extrabold px-2 py-1 rounded-sm tracking-widest", statusClass)}>
+                           {statusText}
+                         </span>
+                       </td>
+                       <td className="px-2 py-5 relative max-w-[200px]">
+                         <div className="flex items-center gap-3">
+                           <span className="text-slate-500 text-xs font-mono font-medium truncate opacity-60 group-hover:opacity-100 transition-opacity">
+                             ...{url.slice(-18)}
+                           </span>
+                           <button 
+                             className="text-slate-300 hover:text-slate-900 transition-colors"
+                             onClick={() => handleCopy(t.id, url)}
+                             title="拷贝连接桥"
+                           >
+                             {copiedId === t.id ? <Check className="w-[14px] h-[14px] text-emerald-500" /> : <Copy className="w-[14px] h-[14px]" />}
+                           </button>
+                           <button
+                             className={clsx("text-slate-300 hover:text-slate-900 transition-colors", qrTarget === t.token && "text-slate-900")}
+                             onClick={() => setQrTarget(qrTarget === t.token ? null : t.token)}
+                             title="投影至移动端扫描仪"
+                           >
+                             <QrCode className="w-[14px] h-[14px]" />
+                           </button>
+                         </div>
+                         
+                         {qrTarget === t.token && (
+                           <div className="absolute left-0 bottom-full mb-2 z-50 bg-white p-4 border border-slate-200 shadow-xl animate-in fade-in slide-in-from-bottom-2">
+                             <div className="flex justify-end mb-2">
+                               <button onClick={() => setQrTarget(null)} className="text-[11px] font-bold tracking-widest text-slate-400 hover:text-slate-900">关闭面板</button>
+                             </div>
+                             <QrCodeDisplay value={url} />
+                             <div className="text-center text-[10px] font-bold tracking-widest text-slate-400 mt-3 pt-2 border-t border-slate-100">
+                               要求现场物理扫描
+                             </div>
+                           </div>
+                         )}
+                       </td>
+                       <td className="px-2 py-5 text-right">
+                         <div className="flex items-center justify-end gap-4 text-[12px] font-bold tracking-widest">
+                           <button
+                             onClick={() => handleToggle(t.id, !t.enabled)}
+                             className="text-slate-400 hover:text-slate-900 transition-colors"
+                           >
+                             {t.enabled ? '执行熔断阻滞' : '重新提权放行'}
+                           </button>
+                           <button
+                             onClick={() => handleDelete(t.id)}
+                             className="text-rose-400 hover:text-rose-600 transition-colors"
+                           >
+                             指令抹除
+                           </button>
+                         </div>
+                       </td>
+                     </tr>
+                   );
+                 })}
+               </tbody>
+             </table>
+           </div>
+        </div>
       </div>
     </div>
   );
