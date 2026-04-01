@@ -60,6 +60,44 @@ export async function POST(req: Request) {
       });
     }
 
+    // ── MCP Knowledge Base Query ──────────────────────────────────────────────
+    // Query the MCP server with the user's latest question; inject the result
+    // into the system prompt so the LLM can reference private knowledge.
+    // Silently skipped if MCP is not configured or the server is unreachable.
+    let enrichedSystemPrompt = systemPrompt || 'You are SenseWorld AI.';
+
+    if (mcpServerUrl) {
+      const userQuery =
+        typeof lastUserMsg?.content === 'string'
+          ? lastUserMsg.content
+          : Array.isArray(lastUserMsg?.content)
+            ? lastUserMsg.content
+                .filter((p: { type: string }) => p.type === 'text')
+                .map((p: { text: string }) => p.text)
+                .join(' ')
+            : '';
+
+      if (userQuery) {
+        try {
+          console.log(`[MCP] querying ${mcpServerUrl} with: ${userQuery.slice(0, 80)}…`);
+          const { MCPClientFactory } = await import('@/lib/mcp/factory');
+          const mcpClient = MCPClientFactory.create();
+          await mcpClient.connect(mcpServerUrl);
+          const mcpResult = await mcpClient.query(userQuery);
+          await mcpClient.disconnect();
+
+          if (mcpResult) {
+            enrichedSystemPrompt =
+              `${enrichedSystemPrompt}\n\n---\n[知识库参考资料]\n${mcpResult}\n---\n请优先参考以上资料回答用户问题。`;
+            console.log(`[MCP] injected ${mcpResult.length} chars into system prompt`);
+          }
+        } catch (mcpErr) {
+          console.warn('[MCP] query failed, proceeding without knowledge base:', mcpErr instanceof Error ? mcpErr.message : mcpErr);
+        }
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     // Init provider
     let model;
     const modelName = aiModel || (aiProvider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : 'gpt-4o');
@@ -71,7 +109,7 @@ export async function POST(req: Request) {
 
     const result = await streamText({
       model,
-      system: systemPrompt || 'You are SenseWorld AI.',
+      system: enrichedSystemPrompt,
       messages: chatMessages,
     });
 
