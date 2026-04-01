@@ -4,6 +4,7 @@ export interface DisplayMessage {
   content: string
   createdAt: string
   streaming?: boolean
+  imageUrl?: string
 }
 
 export interface CapabilityFlags {

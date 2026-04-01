@@ -2,6 +2,7 @@
 
 import { useRef } from 'react'
 import type { RecordingState } from '@/lib/types/chat'
+import { Mic, Loader2 } from 'lucide-react'
 
 interface VoiceRecorderProps {
   token: string
@@ -72,18 +73,20 @@ export function VoiceRecorder({ token, recordingState, onStateChange, onTranscri
       onTouchStart={(e) => { e.preventDefault(); startRecording() }}
       onTouchEnd={(e) => { e.preventDefault(); stopRecording() }}
       disabled={isProcessing}
-      className={`shrink-0 h-11 w-11 rounded-full flex items-center justify-center transition-colors ${
+      className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
         isRecording
-          ? 'bg-red-500 text-white'
+          ? 'text-red-500 bg-red-50 animate-pulse'
           : isProcessing
-          ? 'bg-gray-300 text-gray-400'
-          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          ? 'text-slate-300'
+          : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'
       }`}
       aria-label={isRecording ? '松开发送' : '按住说话'}
     >
-      <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-      </svg>
+      {isProcessing ? (
+        <Loader2 size={16} className="animate-spin" />
+      ) : (
+        <Mic size={16} strokeWidth={2.5} />
+      )}
     </button>
   )
 }

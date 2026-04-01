@@ -7,7 +7,9 @@ export interface CameraCaptureRef {
 }
 
 export interface CameraCaptureProps {
+  isActive: boolean
   onError?: (message: string) => void
+  onClose?: () => void
 }
 
 const MAX_SIDE = 512
@@ -25,12 +27,12 @@ function resizeAndCapture(video: HTMLVideoElement, quality: number): string {
 }
 
 const CameraCapture = forwardRef<CameraCaptureRef, CameraCaptureProps>(function CameraCapture(
-  { onError },
+  { isActive, onError, onClose },
   ref
 ) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
-  const [isActive, setIsActive] = useState(false)
+  const [isReady, setIsReady] = useState(false)
 
   useImperativeHandle(ref, () => ({
     captureFrame(): string | null {
@@ -51,55 +53,62 @@ const CameraCapture = forwardRef<CameraCaptureRef, CameraCaptureProps>(function 
     },
   }))
 
-  async function start() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true })
-      streamRef.current = stream
-      if (videoRef.current) videoRef.current.srcObject = stream
-      setIsActive(true)
-    } catch (err) {
-      if (err instanceof DOMException) {
-        if (err.name === 'NotAllowedError') {
-          onError?.('摄像头权限被拒绝，请在浏览器设置中允许访问')
-        } else if (err.name === 'NotFoundError') {
-          onError?.('未检测到摄像头设备')
-        } else {
-          onError?.('摄像头初始化失败')
+  useEffect(() => {
+    if (isActive) {
+      async function start() {
+        try {
+          setIsReady(false)
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+          streamRef.current = stream
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream
+            videoRef.current.onloadedmetadata = () => setIsReady(true)
+          }
+        } catch (err) {
+          if (err instanceof DOMException) {
+            if (err.name === 'NotAllowedError') {
+              onError?.('摄像头权限被拒绝，请在浏览器设置中允许访问')
+            } else if (err.name === 'NotFoundError') {
+              onError?.('未检测到摄像头设备')
+            } else {
+              onError?.('摄像头初始化失败')
+            }
+          } else {
+            onError?.('摄像头初始化失败')
+          }
+          onClose?.()
         }
-      } else {
-        onError?.('摄像头初始化失败')
       }
-      setIsActive(false)
+      start()
+    } else {
+      setIsReady(false)
+      streamRef.current?.getTracks().forEach((t) => t.stop())
+      streamRef.current = null
+      if (videoRef.current) videoRef.current.srcObject = null
     }
-  }
-
-  function stop() {
-    streamRef.current?.getTracks().forEach((t) => t.stop())
-    streamRef.current = null
-    if (videoRef.current) videoRef.current.srcObject = null
-    setIsActive(false)
-  }
+  }, [isActive, onError, onClose])
 
   useEffect(() => () => { streamRef.current?.getTracks().forEach((t) => t.stop()) }, [])
 
+  if (!isActive) return null
+
   return (
-    <div className="flex flex-col items-center gap-2">
-      {isActive && (
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="w-48 h-36 rounded object-cover bg-black"
-        />
+    <div className="relative flex justify-center mb-2 animate-in fade-in zoom-in-95 duration-200">
+      {!isReady && (
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80 rounded-2xl backdrop-blur-md z-10 border border-white/10 shadow-xl w-48 h-36">
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-5 h-5 border-2 border-white/20 border-t-white/90 rounded-full animate-spin" />
+            <span className="text-xs text-white/70 font-medium">开启摄像头...</span>
+          </div>
+        </div>
       )}
-      <button
-        type="button"
-        onClick={isActive ? stop : start}
-        className="px-3 py-1 text-sm rounded border border-gray-300 hover:bg-gray-100"
-      >
-        {isActive ? '关闭摄像头' : '开启摄像头'}
-      </button>
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className={`w-48 h-36 rounded-2xl object-cover bg-slate-900 shadow-xl border border-white/20 ring-1 ring-black/5 transition-opacity duration-300 ${isReady ? 'opacity-100' : 'opacity-0'}`}
+      />
     </div>
   )
 })

@@ -16,6 +16,11 @@
   --glass-hover: rgba(255, 255, 255, 0.95);
 }
 
+html,
+body {
+  overflow-x: hidden;
+}
+
 body {
   color: var(--foreground);
   background-color: var(--background);

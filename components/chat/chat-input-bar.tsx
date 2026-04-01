@@ -1,6 +1,8 @@
 'use client'
 
-import { useRef } from 'react'
+import { useState } from 'react'
+import clsx from 'clsx'
+import { ArrowRight, Square } from 'lucide-react'
 
 interface ChatInputBarProps {
   value: string
@@ -11,7 +13,7 @@ interface ChatInputBarProps {
 }
 
 export function ChatInputBar({ value, onChange, onSend, disabled, children }: ChatInputBarProps) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [isFocused, setIsFocused] = useState(false)
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -20,31 +22,64 @@ export function ChatInputBar({ value, onChange, onSend, disabled, children }: Ch
     }
   }
 
+  const isExpanded = isFocused || value.length > 0
+
   return (
-    <div className="border-t border-gray-200 bg-white px-4 py-3 safe-area-bottom">
-      <div className="flex items-end gap-2 max-w-2xl mx-auto">
-        {children}
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={disabled}
-          placeholder="输入消息…"
-          rows={1}
-          className="flex-1 resize-none rounded-2xl border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 min-h-[44px] max-h-32"
-          style={{ overflowY: 'auto' }}
-        />
-        <button
-          onClick={onSend}
-          disabled={disabled || !value.trim()}
-          className="shrink-0 h-11 w-11 rounded-full bg-blue-500 text-white flex items-center justify-center disabled:opacity-40 active:bg-blue-600"
-          aria-label="发送"
-        >
-          <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-          </svg>
-        </button>
+    /* Gradient fade above the input bar */
+    <div className="shrink-0 px-4 pb-6 pt-2 bg-gradient-to-t from-white via-white to-transparent flex justify-center">
+      <div
+        className={clsx(
+          'bg-white transition-all duration-300 ease-out rounded-3xl flex flex-col justify-end overflow-hidden w-full',
+          isExpanded
+            ? 'max-w-3xl shadow-[0_4px_32px_-4px_rgba(0,0,0,0.12)] border border-slate-200/80'
+            : 'max-w-2xl shadow-[0_2px_12px_-2px_rgba(0,0,0,0.06)] border border-slate-100/60'
+        )}
+      >
+        <div className="relative flex items-end p-2 gap-2">
+
+          {/* Left slot — voice recorder or other actions */}
+          {children && (
+            <div className="flex gap-1 pl-2 mb-1.5">
+              {children}
+            </div>
+          )}
+
+          {/* Textarea */}
+          <textarea
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            disabled={disabled}
+            placeholder="Ask SenseWorld anything…"
+            rows={isExpanded ? 3 : 1}
+            className="flex-1 bg-transparent border-none focus:ring-0 outline-none resize-none py-3 px-2 text-[15px] leading-relaxed text-slate-900 placeholder:text-slate-400 disabled:opacity-50"
+            style={{
+              minHeight: isExpanded ? '80px' : '44px',
+              overflowY: 'auto',
+            }}
+          />
+
+          {/* Submit button */}
+          <button
+            onClick={onSend}
+            disabled={disabled || !value.trim()}
+            aria-label="发送"
+            className={clsx(
+              'mb-1 mr-1 flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300',
+              !disabled && value.trim()
+                ? 'bg-slate-900 text-white shadow-sm hover:scale-105 active:scale-95'
+                : 'bg-slate-50 text-slate-300 cursor-not-allowed'
+            )}
+          >
+            {disabled
+              ? <Square size={14} fill="currentColor" />
+              : <ArrowRight size={18} strokeWidth={2.5} />
+            }
+          </button>
+
+        </div>
       </div>
     </div>
   )

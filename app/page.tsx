@@ -1,35 +1,50 @@
-'use client';
+'use client'
 
-import { useChat } from '@ai-sdk/react';
-import { MessageList } from '@/components/chat/MessageList';
-import { ChatInput } from '@/components/chat/ChatInput';
+import { Suspense, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { ChatInterface } from '@/components/chat/chat-interface'
+import { ChatSidebar } from '@/components/chat/chat-sidebar'
 
-export default function Home() {
-  const { messages, append, isLoading } = useChat({
-    api: '/api/chat',
-  });
+function ChatHomeInner() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const token = searchParams.get('token') ?? ''
 
-  const handleSend = (content: string) => {
-    append({ role: 'user', content });
-  };
+  // No token → send to admin to get one
+  useEffect(() => {
+    if (!token) {
+      router.replace('/admin/config')
+    }
+  }, [token, router])
+
+  if (!token) {
+    return (
+      <div className="flex h-screen items-center justify-center text-slate-300 text-sm">
+        重定向中…
+      </div>
+    )
+  }
 
   return (
-    <main className="flex min-h-screen flex-col bg-white overflow-hidden relative selection:bg-slate-200">
-      
-      {/* Header Gradient Area (Optional, for aesthetic fade) */}
-      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none" />
+    <div className="flex h-screen bg-white overflow-hidden">
+      <ChatSidebar token={token} />
+      <main className="flex-1 min-w-0 overflow-hidden">
+        <ChatInterface token={token} />
+      </main>
+    </div>
+  )
+}
 
-      {/* Main Document Flow */}
-      <div className="flex-1 overflow-y-auto w-full mx-auto relative z-0">
-        <MessageList messages={messages} isLoading={isLoading} />
-      </div>
-
-      {/* Floating Input Capsule */}
-      <ChatInput 
-        onSend={handleSend} 
-        isLoading={isLoading} 
-      />
-
-    </main>
-  );
+export default function ChatHomePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-screen items-center justify-center text-slate-300 text-sm">
+          加载中…
+        </div>
+      }
+    >
+      <ChatHomeInner />
+    </Suspense>
+  )
 }
