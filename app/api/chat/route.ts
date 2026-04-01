@@ -1,48 +1,117 @@
 import { createOpenAI } from '@ai-sdk/openai';
+import { createAnthropic } from '@ai-sdk/anthropic';
 import { streamText } from 'ai';
+import { getConfig } from '@/lib/config';
+import { prisma } from '@/lib/db';
+import { validateToken } from '@/lib/auth/token';
+import { NextResponse } from 'next/server';
 
-export const maxDuration = 30; // 30 second timeout for Vercel
+export const maxDuration = 30;
 
 export async function POST(req: Request) {
   try {
-    const { messages } = await req.json();
+    const { searchParams } = new URL(req.url);
+    const token = searchParams.get('token');
+    if (!token) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+    const valid = await validateToken(token);
+    if (!valid) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
-    // Clean the incoming messages to ensure compatibility (remove new 'parts' array if present)
-    const cleanMessages = messages.map((m: { role: string; content?: string }) => ({
-      role: m.role,
-      content: typeof m.content === 'string' ? m.content : (m.content || ''),
-    }));
+    const [
+      aiProvider,
+      aiApiKey,
+      aiModel,
+      aiBaseUrl,
+      systemPrompt,
+      mcpServerUrl
+    ] = await Promise.all([
+      getConfig('AI_PROVIDER'),
+      getConfig('AI_API_KEY'),
+      getConfig('AI_MODEL'),
+      getConfig('AI_BASE_URL'),
+      getConfig('SYSTEM_PROMPT'),
+      getConfig('MCP_SERVER_URL'),
+    ]);
 
-    // Create a custom provider relying on SenseWorld's .env configurations
-    const customOpenAI = createOpenAI({
-      apiKey: process.env.AI_API_KEY || process.env.OPENAI_API_KEY || '',
-      baseURL: process.env.AI_BASE_URL || process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
-    });
+    if (!aiProvider || !aiApiKey) return NextResponse.json({ error: 'AI provider not configured' }, { status: 503 });
 
-    const modelName = process.env.AI_MODEL || 'gpt-4o';
+    const { messages, sessionId, message: directMessage } = await req.json();
+
+    // Resolve session
+    let session: { id: string };
+    if (sessionId) {
+      const existing = await prisma.chatSession.findUnique({ where: { id: sessionId } });
+      if (!existing) return NextResponse.json({ error: 'session not found' }, { status: 404 });
+      session = existing;
+    } else {
+      session = await prisma.chatSession.create({ data: { accessToken: token } });
+    }
+
+    // Support both 'messages' (Vercel style) and 'message' (Original style)
+    let chatMessages = messages || [];
+    if (directMessage && (!messages || messages.length === 0)) {
+      chatMessages = [{ role: 'user', content: directMessage }];
+    }
+
+    // Save user message to DB (if provided as text)
+    const lastUserMsg = chatMessages[chatMessages.length - 1];
+    if (lastUserMsg && lastUserMsg.role === 'user') {
+      await prisma.message.create({
+        data: { sessionId: session.id, role: 'user', content: lastUserMsg.content }
+      });
+    }
+
+    // Init provider
+    let model;
+    const modelName = aiModel || (aiProvider === 'anthropic' ? 'claude-3-5-sonnet-20240620' : 'gpt-4o');
+    if (aiProvider === 'anthropic') {
+      model = createAnthropic({ apiKey: aiApiKey, baseURL: aiBaseUrl || undefined })(modelName);
+    } else {
+      model = createOpenAI({ apiKey: aiApiKey, baseURL: aiBaseUrl || 'https://api.openai.com/v1' })(modelName);
+    }
 
     const result = await streamText({
-      model: customOpenAI(modelName),
-      system: 'You are SenseWorld AI, an advanced multi-modal enterprise platform assistant. You respond in markdown and maintain a professional, academic, yet approachable tone. Format lists cleanly. If asked to design something or provide code, do so elegantly. Always respond in the language the user is speaking in, typically Chinese.',
-      messages: cleanMessages,
+      model,
+      system: systemPrompt || 'You are SenseWorld AI.',
+      messages: chatMessages,
     });
 
-    // @ts-expect-error - Ensure we force the data stream encoding that useChat expects instead of plaintext
-    return result.toDataStreamResponse ? result.toDataStreamResponse() : result.toTextStreamResponse();
+    // Convert Vercel stream to Original SenseWorld SSE format (data: {"text":"..."})
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        let fullContent = '';
+        try {
+          for await (const chunk of result.textStream) {
+            fullContent += chunk;
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunk })}\n\n`));
+          }
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+
+          // Final persistence
+          if (fullContent) {
+            await prisma.message.create({
+              data: { sessionId: session.id, role: 'assistant', content: fullContent }
+            });
+          }
+        } catch (err) {
+          console.error('Stream error:', err);
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: 'Stream error' })}\n\n`));
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'X-Session-Id': session.id,
+      },
+    });
   } catch (error: unknown) {
-    const err = error as Error;
-    console.error('AI Stream Error:', err);
-    // Return a visible error to the client instead of the opaque "An error occurred."
-    return new Response(
-      JSON.stringify({ 
-        error: err?.message || 'Unknown Server Error',
-        name: err?.name,
-        cause: err?.cause 
-      }), 
-      { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
+    console.error('AI Route Error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
