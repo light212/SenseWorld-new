@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminJwt } from '@/lib/auth/jwt'
 import { HttpMCPClient } from '@/lib/mcp/http-client'
+import { getConfig } from '@/lib/config'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -16,22 +17,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 
-  let body: { url?: string, apiKey?: string }
+  let body: { url?: string }
   try {
     body = await req.json()
   } catch {
     return NextResponse.json({ error: 'url is required' }, { status: 400 })
   }
 
-  const { url, apiKey } = body
+  const { url } = body
   if (!url || typeof url !== 'string' || !url.trim()) {
     return NextResponse.json({ error: 'url is required' }, { status: 400 })
   }
 
+  // Read API key from database (frontend only has masked value)
+  const apiKey = await getConfig('MCP_API_KEY')
+
   // Validate protocol via HttpMCPClient.connect(), then probe reachability with a minimal request
   const client = new HttpMCPClient()
   try {
-    await client.connect(url.trim(), apiKey)
+    await client.connect(url.trim(), apiKey ?? undefined)
   } catch (err) {
     const message = err instanceof Error ? err.message : '地址无效'
     return NextResponse.json({ success: false, message })

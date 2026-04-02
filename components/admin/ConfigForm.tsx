@@ -609,7 +609,7 @@ export default function ConfigForm({ initialConfigs }: Props) {
                          />
                          {key === 'MCP_SERVER_URL' && (
                            <div className="mt-4">
-                             <McpTestButton currentUrl={getValue(key)} currentApiKey={getValue('MCP_API_KEY')} />
+                             <McpTestButton currentUrl={getValue(key)} />
                            </div>
                          )}
                        </div>
