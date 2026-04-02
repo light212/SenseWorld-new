@@ -107,6 +107,8 @@
 - MySQL 8.0 via Prisma — Config 表（key-value），ChatSession/Message 表（复用） (009-config-ux-xai)
 - TypeScript 5.x / Node.js 20 LTS + Next.js 14 App Router, `@modelcontextprotocol/sdk` v1.29.0（现有）, Prisma 5.x (010-mcp-robustness)
 - MySQL 8.0 via Prisma -- Config 表存储超时/连接池参数（新增 key-value 条目），无新增表 (010-mcp-robustness)
+- TypeScript 5.x + Next.js 14 App Router, React 18, Tailwind CSS, lucide-react (已有), clsx (已有) (011-tool-call-ui)
+- N/A（纯前端组件变更，无数据库操作） (011-tool-call-ui)
 
 ## Recent Changes
 - 001-project-scaffold: Added TypeScript 5.x，Node.js 20 LTS + Next.js 14, Tailwind CSS, shadcn/ui, Prisma ORM, bcryptjs
