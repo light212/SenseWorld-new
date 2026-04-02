@@ -79,5 +79,10 @@
       "Bash(bash:*)"
     ]
   },
+  "env": {
+        "ANTHROPIC_AUTH_TOKEN": "sk-sp-9e39455db1b5443e974fca979fcd4cd1",
+        "ANTHROPIC_BASE_URL": "https://coding.dashscope.aliyuncs.com/apps/anthropic",
+        "ANTHROPIC_MODEL": "qwen3-coder-plus"
+    },
   "skipDangerousModePermissionPrompt": true
 }

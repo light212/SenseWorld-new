@@ -16,6 +16,8 @@
 | 008 | avatar | 数字人视频回复（AvatarProvider 接口 + HeyGen/D-ID 实现，运营可配置） | ✅ 已完成 |
 | 009 | admin-config-ux-xai | 后台配置 UI 重设计（Provider 卡片选择 + 动态字段）+ xAI 接入（AI 对话/TTS/实时语音） | ✅ 已完成 |
 | 010 | mcp-robustness | MCP 健壮性全面改进（超时控制、连接池、监控指标） | ✅ 已完成 |
+| 011 | tool-call-ui | 聊天界面 MCP 工具调用展示优化（解析工具消息，渲染为 Editorial Minimal 风格卡片） | ✅ 已完成 |
+| 012 | mcp-tool-progress-ux | MCP 工具调用进度可视化 + 结构化结果展示（智能进度感知、分层可视化、结果组织结构） | ⬜ 待开始 |
 
 ## 状态说明
 
@@ -148,3 +150,47 @@
 - 结构化日志（JSON 格式）
 - 连接池（最大 5 连接，60s 空闲清理）
 - 监控指标（Prometheus 格式导出）
+
+---
+
+### 011 · tool-call-ui
+
+**目标**：优化聊天界面中 MCP 工具调用的展示，从纯文本改为 Editorial Minimal 风格卡片组件。
+
+**需求文档**：`specs/011-tool-call-ui/spec.md`（待创建）
+
+包含：
+- `parseMessageContent()` 解析器 -- 将消息文本拆分为 text / tool-call / tool-result / tool-error 段
+- `ToolCallCard` 组件 -- 工具调用进行中（半透明灰色背景 + Loader2 旋转图标）
+- `ToolResultCard` 组件 -- 工具结果（白色轻量背景 + 可折叠结果文本）
+- `ToolErrorCard` 组件 -- 工具错误（淡红色背景 + AlertTriangle 图标）
+- `MessageList` 组件改造 -- assistant 消息使用分段渲染
+
+设计风格：
+- Editorial Minimal：slate 色系、半透明背景（`bg-slate-50/80`、`bg-white/60`）、轻边框（`border-slate-200/60`）
+- `rounded-xl` 圆角、`backdrop-blur-sm` 玻璃效果
+- lucide-react 图标 `strokeWidth={2.5}`
+- 与现有聊天 UI 无缝融合
+
+**开发流程**：
+```
+/speckit.specify 011-tool-call-ui
+/speckit.plan
+/speckit.tasks
+/speckit.implement
+```
+
+---
+
+### 012 · mcp-tool-progress-ux
+
+**目标**：改进MCP工具调用的用户体验，包括进度可视化和结构化结果展示。
+
+包含：
+- 智能情境感知进度：根据问题类型动态调整进度文案，避免技术术语
+- 分层可视化设计：主进度条显示整体状态，可展开查看详细步骤
+- 结构化结果展示：按信息层级组织内容（主要结果 > 补充信息 > 相关推荐）
+- 可折叠分组：用户可自主选择查看哪些内容
+- 保持Editorial Minimal设计风格的一致性
+
+---

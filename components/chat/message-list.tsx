@@ -4,6 +4,10 @@ import { useEffect, useRef } from 'react'
 import clsx from 'clsx'
 import { Sparkles, User2, Loader2 } from 'lucide-react'
 import type { DisplayMessage } from '@/lib/types/chat'
+import { parseMessageContent } from '@/lib/parse-message-content';
+import ToolCallCard from './tool-call-card';
+import ToolResultCard from './tool-result-card';
+import ToolErrorCard from './tool-error-card';
 
 export function MessageList({ messages }: { messages: DisplayMessage[] }) {
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -48,16 +52,68 @@ export function MessageList({ messages }: { messages: DisplayMessage[] }) {
             {/* Message content */}
             <div className="pl-0 md:pl-10">
               {msg.content ? (
-                <div
-                  className={clsx(
-                    'text-[15px] leading-[1.8] md:leading-[2] tracking-[0.02em] whitespace-pre-wrap',
-                    msg.role === 'assistant' ? 'text-slate-800 font-medium' : 'text-slate-600'
-                  )}
-                >
-                  {msg.content}
-                  {/* Blinking cursor while streaming */}
-                  {msg.streaming && (
-                    <span className="inline-block w-[2px] h-[1em] ml-0.5 bg-slate-400 animate-pulse align-middle" />
+                <div className={msg.role === 'assistant' ? '' : ''}>
+                  {msg.role === 'assistant' ? (
+                    <>
+                      {parseMessageContent(msg.content).map((segment, index) => {
+                        switch (segment.type) {
+                          case 'text':
+                            return (
+                              <div
+                                key={index}
+                                className={clsx(
+                                  'text-[15px] leading-[1.8] md:leading-[2] tracking-[0.02em] whitespace-pre-wrap',
+                                  'text-slate-800 font-medium'
+                                )}
+                              >
+                                {segment.content}
+                              </div>
+                            );
+                          case 'tool-call':
+                            return (
+                              <ToolCallCard
+                                key={index}
+                                toolName={segment.toolName}
+                                isStreaming={msg.streaming}
+                              />
+                            );
+                          case 'tool-result':
+                            return (
+                              <ToolResultCard
+                                key={index}
+                                toolName={segment.toolName}
+                                result={segment.result}
+                              />
+                            );
+                          case 'tool-error':
+                            return (
+                              <ToolErrorCard
+                                key={index}
+                                error={segment.error}
+                              />
+                            );
+                          default:
+                            return null;
+                        }
+                      })}
+                      {/* Blinking cursor while streaming */}
+                      {msg.streaming && (
+                        <span className="inline-block w-[2px] h-[1em] ml-0.5 bg-slate-400 animate-pulse align-middle" />
+                      )}
+                    </>
+                  ) : (
+                    <div
+                      className={clsx(
+                        'text-[15px] leading-[1.8] md:leading-[2] tracking-[0.02em] whitespace-pre-wrap',
+                        'text-slate-600'
+                      )}
+                    >
+                      {msg.content}
+                      {/* Blinking cursor while streaming */}
+                      {msg.streaming && (
+                        <span className="inline-block w-[2px] h-[1em] ml-0.5 bg-slate-400 animate-pulse align-middle" />
+                      )}
+                    </div>
                   )}
                 </div>
               ) : (
