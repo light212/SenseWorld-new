@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { maskApiKey } from '@/lib/config';
+import { maskApiKey, invalidateConfigCache } from '@/lib/config';
 
 export async function GET() {
   const rows = await prisma.config.findMany({ orderBy: { key: 'asc' } });
@@ -52,6 +52,9 @@ export async function PUT(request: NextRequest) {
       })
     )
   );
+
+  // Invalidate config cache so next requests get fresh values
+  invalidateConfigCache();
 
   return NextResponse.json({ ok: true });
 }

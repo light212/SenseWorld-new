@@ -3,6 +3,7 @@
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ChatSidebar } from '@/components/chat/chat-sidebar';
+import { ErrorBoundary } from '@/components/error-boundary';
 
 function ChatLayoutInner({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
@@ -15,7 +16,9 @@ function ChatLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* Main chat area */}
       <main className="flex-1 min-w-0 overflow-hidden">
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </main>
     </div>
   );
