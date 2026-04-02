@@ -14,7 +14,7 @@
 | 006 | chat-ui | 前端对话界面（消息列表、流式显示、录音按钮、摄像头预览） | ✅ 已完成 |
 | 007 | mcp-integration | MCP Server 连接层（@modelcontextprotocol/sdk，预留接口） | ✅ 已完成 |
 | 008 | avatar | 数字人视频回复（AvatarProvider 接口 + HeyGen/D-ID 实现，运营可配置） | ✅ 已完成 |
-| 009 | admin-config-ux-xai | 后台配置 UI 重设计（Provider 卡片选择 + 动态字段）+ xAI 接入（AI 对话/TTS/实时语音） | ⬜ 待开始 |
+| 009 | admin-config-ux-xai | 后台配置 UI 重设计（Provider 卡片选择 + 动态字段）+ xAI 接入（AI 对话/TTS/实时语音） | ✅ 已完成 |
 
 ## 状态说明
 

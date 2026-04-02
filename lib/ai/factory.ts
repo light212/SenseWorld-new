@@ -13,6 +13,7 @@ export class LLMFactory {
    * @param provider 服务商名称（与运营配置中 AI_PROVIDER 字段对应）
    * @param apiKey API 密钥
    * @param model 模型名称
+   * @param baseURL 代理地址（可选）
    * @returns LLMProvider 实例
    * @throws 不支持的服务商时抛出错误
    */
@@ -22,6 +23,9 @@ export class LLMFactory {
         return new OpenAIProvider(apiKey, model, baseURL)
       case 'anthropic':
         return new AnthropicProvider(apiKey, model, baseURL)
+      case 'xai':
+        // xAI API 与 OpenAI SDK 完全兼容，使用内置 baseURL
+        return new OpenAIProvider(apiKey, model, baseURL ?? 'https://api.x.ai/v1')
       default:
         throw new Error('AI provider not configured')
     }

@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import clsx from 'clsx'
-import { ArrowRight, Square } from 'lucide-react'
+import { ArrowRight, Square, Mic2 } from 'lucide-react'
+import { RealtimeVoiceButton } from './realtime-voice-button'
 
 interface ChatInputBarProps {
   value: string
@@ -10,9 +11,28 @@ interface ChatInputBarProps {
   onSend: () => void
   disabled: boolean
   children?: React.ReactNode
+  // Realtime voice support
+  realtimeVoice?: boolean
+  token?: string
+  sessionId?: string
+  systemPrompt?: string
+  onSessionCreated?: (id: string) => void
+  onNewMessages?: (msgs: Array<{ role: string; content: string }>) => void
 }
 
-export function ChatInputBar({ value, onChange, onSend, disabled, children }: ChatInputBarProps) {
+export function ChatInputBar({
+  value,
+  onChange,
+  onSend,
+  disabled,
+  children,
+  realtimeVoice,
+  token,
+  sessionId,
+  systemPrompt,
+  onSessionCreated,
+  onNewMessages,
+}: ChatInputBarProps) {
   const [isFocused, setIsFocused] = useState(false)
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -38,11 +58,20 @@ export function ChatInputBar({ value, onChange, onSend, disabled, children }: Ch
         <div className="relative flex items-end p-2 gap-2">
 
           {/* Left slot — voice recorder or other actions */}
-          {children && (
-            <div className="flex gap-1 pl-2 mb-1.5">
-              {children}
-            </div>
-          )}
+          <div className="flex gap-1 pl-2 mb-1.5">
+            {/* Realtime voice button */}
+            {realtimeVoice && token && (
+              <RealtimeVoiceButton
+                token={token}
+                sessionId={sessionId}
+                systemPrompt={systemPrompt}
+                onSessionCreated={onSessionCreated}
+                onNewMessages={onNewMessages}
+              />
+            )}
+            {/* Existing children (e.g., standard voice recorder) */}
+            {children}
+          </div>
 
           {/* Textarea */}
           <textarea

@@ -106,7 +106,9 @@ export async function POST(req: Request) {
     if (aiProvider === 'anthropic') {
       model = createAnthropic({ apiKey: aiApiKey, baseURL: aiBaseUrl || undefined })(modelName);
     } else {
-      model = createOpenAI({ apiKey: aiApiKey, baseURL: aiBaseUrl || 'https://api.openai.com/v1' })(modelName);
+      // OpenAI and xAI both use OpenAI SDK; xAI has different default baseURL
+      const defaultBaseUrl = aiProvider === 'xai' ? 'https://api.x.ai/v1' : 'https://api.openai.com/v1';
+      model = createOpenAI({ apiKey: aiApiKey, baseURL: aiBaseUrl || defaultBaseUrl })(modelName);
     }
 
     const result = await streamText({
