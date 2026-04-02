@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
-  // Verify admin session
+  // ── Auth ──────────────────────────────────────────────────────────────────
   const token = req.cookies.get('admin_token')?.value
   if (!token) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 
+  // ── Parse body ────────────────────────────────────────────────────────────
   let body: { url?: string }
   try {
     body = await req.json()
@@ -29,44 +30,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'url is required' }, { status: 400 })
   }
 
-  // Read API key from database (frontend only has masked value)
+  // Read real API key from DB (frontend only receives masked value)
   const apiKey = await getConfig('MCP_API_KEY')
 
-  // Validate protocol via HttpMCPClient.connect(), then probe reachability with a minimal request
+  // ── Connect via official SDK and probe tools/list ─────────────────────────
+  // A successful tools/list call is the most reliable connectivity proof:
+  //   • confirms the URL is reachable
+  //   • confirms the server speaks MCP protocol
+  //   • confirms the API key (if required) is accepted
   const client = new HttpMCPClient()
   try {
-    await client.connect(url.trim(), apiKey ?? undefined)
-  } catch (err) {
-    const message = err instanceof Error ? err.message : '地址无效'
-    return NextResponse.json({ success: false, message })
-  }
+    await client.connect(url.trim(), apiKey)
 
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), 5000)
-  try {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (apiKey) {
-      headers['Authorization'] = `Bearer ${apiKey}`
-    }
+    const tools = await client.listTools()
 
-    const res = await fetch(url.trim(), {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ query: '' }),
-      signal: controller.signal,
+    return NextResponse.json({
+      success: true,
+      message: `连接成功，发现 ${tools.length} 个工具${tools.length > 0 ? `：${tools.map((t) => t.name).join(' / ')}` : ''}`,
+      tools,
     })
-    if (!res.ok) {
-      return NextResponse.json({ success: false, message: `服务器返回 HTTP ${res.status}` })
-    }
-    return NextResponse.json({ success: true, message: '连接成功' })
   } catch (err) {
-    if (err instanceof Error && err.name === 'AbortError') {
-      return NextResponse.json({ success: false, message: '连接超时（5秒）' })
-    }
     const message = err instanceof Error ? err.message : '连接失败'
     return NextResponse.json({ success: false, message })
   } finally {
-    clearTimeout(timer)
-    await client.disconnect()
+    await client.disconnect().catch(() => {})
   }
 }

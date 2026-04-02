@@ -92,7 +92,7 @@ export function ChatInputBar({
 
           {/* Submit button */}
           <button
-            onClick={onSend}
+            onClick={() => onSend()}
             disabled={disabled || !value.trim()}
             aria-label="发送"
             className={clsx(

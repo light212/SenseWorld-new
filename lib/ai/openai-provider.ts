@@ -31,7 +31,8 @@ export class OpenAIProvider implements LLMProvider {
     const lastUserIdx = messages.map((m) => m.role).lastIndexOf('user')
     const response = await this.client.chat.completions.create({
       model: this.model,
-      messages: messages.map((m, i) => ({ role: m.role, content: buildOpenAIContent(m, i === lastUserIdx) })),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      messages: messages.map((m, i) => ({ role: m.role, content: buildOpenAIContent(m, i === lastUserIdx) })) as any,
     })
     return response.choices[0]?.message?.content ?? ''
   }
@@ -40,7 +41,8 @@ export class OpenAIProvider implements LLMProvider {
     const lastUserIdx = messages.map((m) => m.role).lastIndexOf('user')
     const stream = await this.client.chat.completions.create({
       model: this.model,
-      messages: messages.map((m, i) => ({ role: m.role, content: buildOpenAIContent(m, i === lastUserIdx) })),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      messages: messages.map((m, i) => ({ role: m.role, content: buildOpenAIContent(m, i === lastUserIdx) })) as any,
       stream: true,
     })
     for await (const chunk of stream) {
