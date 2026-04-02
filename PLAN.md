@@ -15,6 +15,7 @@
 | 007 | mcp-integration | MCP Server 连接层（@modelcontextprotocol/sdk，预留接口） | ✅ 已完成 |
 | 008 | avatar | 数字人视频回复（AvatarProvider 接口 + HeyGen/D-ID 实现，运营可配置） | ✅ 已完成 |
 | 009 | admin-config-ux-xai | 后台配置 UI 重设计（Provider 卡片选择 + 动态字段）+ xAI 接入（AI 对话/TTS/实时语音） | ✅ 已完成 |
+| 010 | mcp-robustness | MCP 健壮性全面改进（超时控制、连接池、监控指标） | ✅ 已完成 |
 
 ## 状态说明
 
@@ -132,3 +133,18 @@
 - `/api/avatar` 路由
 - `AvatarPlayer` 前端组件（视频播放）
 - 运营可配置：服务商、Avatar ID、API Key
+
+---
+
+### 010 · mcp-robustness
+
+**目标**：增强 MCP 实现的健壮性，支持生产环境稳定运行。
+
+**需求文档**：`specs/010-mcp-robustness/spec.md`
+
+包含：
+- 细粒度超时控制（连接 5s、工具调用 15-60s）
+- 错误分类（网络错误、超时、认证失败等）
+- 结构化日志（JSON 格式）
+- 连接池（最大 5 连接，60s 空闲清理）
+- 监控指标（Prometheus 格式导出）
