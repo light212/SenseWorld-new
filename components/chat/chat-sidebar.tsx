@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { MessageSquare, Plus, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { MessageSquare, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import clsx from 'clsx';
 
 interface SessionPreview {
@@ -84,6 +84,7 @@ export function ChatSidebar({ token }: ChatSidebarProps) {
 
   return (
     <aside
+      aria-label="对话历史"
       className={clsx(
         'relative flex flex-col h-full transition-all duration-300 ease-in-out shrink-0',
         collapsed ? 'w-14' : 'w-64'
@@ -101,6 +102,7 @@ export function ChatSidebar({ token }: ChatSidebarProps) {
           <button
             onClick={handleNewChat}
             title="新建对话"
+            aria-label="新建对话"
             className={clsx(
               'flex items-center justify-center w-8 h-8 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all duration-150',
               collapsed && 'w-9 h-9'

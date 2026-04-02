@@ -105,6 +105,8 @@
 - MySQL via Prisma（复用 Config 表，键：`MCP_SERVER_URL`） (007-mcp-integration)
 - TypeScript 5.x, Node.js 20 LTS, Next.js 14 (App Router) + `@ai-sdk/openai`, `@ai-sdk/anthropic`, `openai` SDK, Prisma ORM 5.x, Tailwind CSS, shadcn/ui (009-config-ux-xai)
 - MySQL 8.0 via Prisma — Config 表（key-value），ChatSession/Message 表（复用） (009-config-ux-xai)
+- TypeScript 5.x / Node.js 20 LTS + Next.js 14 App Router, `@modelcontextprotocol/sdk` v1.29.0（现有）, Prisma 5.x (010-mcp-robustness)
+- MySQL 8.0 via Prisma -- Config 表存储超时/连接池参数（新增 key-value 条目），无新增表 (010-mcp-robustness)
 
 ## Recent Changes
 - 001-project-scaffold: Added TypeScript 5.x，Node.js 20 LTS + Next.js 14, Tailwind CSS, shadcn/ui, Prisma ORM, bcryptjs

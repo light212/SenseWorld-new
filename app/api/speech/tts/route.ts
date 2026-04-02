@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getConfig } from '@/lib/config'
 import { SpeechFactory } from '@/lib/speech/factory'
 import { validateToken } from '@/lib/auth/token'
+import { isRateLimited } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -15,6 +16,11 @@ export async function POST(req: NextRequest) {
   const valid = await validateToken(token)
   if (!valid) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  }
+
+  // Rate limit: 20 requests per minute per token
+  if (isRateLimited(`tts:${token}`, 20)) {
+    return NextResponse.json({ error: 'Too many requests. Please slow down.' }, { status: 429 })
   }
 
   // 2. Parse request body

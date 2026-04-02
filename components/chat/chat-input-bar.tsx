@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import clsx from 'clsx'
-import { ArrowRight, Square, Mic2 } from 'lucide-react'
+import { ArrowRight, Square } from 'lucide-react'
 import { RealtimeVoiceButton } from './realtime-voice-button'
 
 interface ChatInputBarProps {
@@ -81,6 +81,7 @@ export function ChatInputBar({
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             disabled={disabled}
+            aria-label="消息输入"
             placeholder="Ask SenseWorld anything…"
             rows={isExpanded ? 3 : 1}
             className="flex-1 bg-transparent border-none focus:ring-0 outline-none resize-none py-3 px-2 text-[15px] leading-relaxed text-slate-900 placeholder:text-slate-400 disabled:opacity-50"

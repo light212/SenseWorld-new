@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getConfig } from '@/lib/config'
 import { SpeechFactory } from '@/lib/speech/factory'
 import { validateToken } from '@/lib/auth/token'
+import { isRateLimited } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-const MAX_SIZE = 25 * 1024 * 1024 // 25MB
+const DEFAULT_MAX_SIZE = 25 * 1024 * 1024 // 25MB
 
 export async function POST(req: NextRequest) {
   // 1. Validate access token
@@ -19,7 +20,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 
+  // Rate limit: 20 requests per minute per token
+  if (isRateLimited(`stt:${token}`, 20)) {
+    return NextResponse.json({ error: 'Too many requests. Please slow down.' }, { status: 429 })
+  }
+
   // 2. Load speech config
+  const maxSizeStr = await getConfig('STT_MAX_SIZE')
+  const maxSize = maxSizeStr ? parseInt(maxSizeStr, 10) * 1024 * 1024 : DEFAULT_MAX_SIZE
+
   const provider = await getConfig('speech_provider')
   if (!provider) {
     return NextResponse.json({ error: 'speech service not configured' }, { status: 503 })
@@ -51,8 +60,8 @@ export async function POST(req: NextRequest) {
   }
 
   // 4. Check file size
-  if (audioFile.size > MAX_SIZE) {
-    return NextResponse.json({ error: 'file too large, max 25MB' }, { status: 400 })
+  if (audioFile.size > maxSize) {
+    return NextResponse.json({ error: `file too large, max ${Math.round(maxSize / 1024 / 1024)}MB` }, { status: 400 })
   }
 
   // 5. Convert to Buffer

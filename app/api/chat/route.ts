@@ -1,10 +1,10 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { streamText, tool, jsonSchema, type ToolSet, type LanguageModel } from 'ai';
-import { z } from 'zod/v4';
 import { getConfig } from '@/lib/config';
 import { prisma } from '@/lib/db';
 import { validateToken } from '@/lib/auth/token';
+import { isRateLimited } from '@/lib/rate-limit';
 import { NextResponse } from 'next/server';
 import type { MCPTool } from '@/lib/mcp/types';
 
@@ -27,7 +27,9 @@ function mcpToolToAiTool(
 
   return tool({
     description: mcpTool.description,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     parameters: jsonSchema<any>(mcpTool.inputSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     execute: async (args: any) => {
       // For fallback safety against strictly empty results:
       const missing = required.filter(
@@ -70,6 +72,11 @@ export async function POST(req: Request) {
     const valid = await validateToken(token);
     if (!valid) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
+    // ── Rate limit ──────────────────────────────────────────────────────────
+    if (isRateLimited(`chat:${token}`, 30)) {
+      return NextResponse.json({ error: 'Too many requests. Please slow down.' }, { status: 429 });
+    }
+
     // ── Config ──────────────────────────────────────────────────────────────
     const [
       aiProvider,
@@ -109,10 +116,11 @@ export async function POST(req: Request) {
     // Support both message array and single-message format
     let chatMessages = messages || [];
     if (directMessage && (!messages || messages.length === 0)) {
-      // Fetch historical context for long-running sessions
+      // Fetch historical context for long-running sessions (last 50 messages)
       const history = await prisma.message.findMany({
         where: { sessionId: session.id },
         orderBy: { createdAt: 'asc' },
+        take: 50,
       });
       chatMessages = history.map((h) => ({
         role: h.role as 'user' | 'assistant' | 'system',
@@ -130,17 +138,17 @@ export async function POST(req: Request) {
     }
 
     // ── MCP Tool Setup ──────────────────────────────────────────────────────
-    // Connect to MCP Server, discover real tools, and expose them to the LLM
-    // as native Function Calling definitions. If MCP is not configured or the
-    // server is unreachable the chat continues without tools.
-    let mcpTools: ToolSet = {};
+    // Connect to MCP Server via connection pool, discover real tools,
+    // and expose them to the LLM as native Function Calling definitions.
+    // If MCP is not configured or the server is unreachable the chat
+    // continues without tools.
+    const mcpTools: ToolSet = {};
     let mcpClient: import('@/lib/mcp/types').MCPClient | null = null;
 
     if (mcpServerUrl) {
       try {
         const { MCPClientFactory } = await import('@/lib/mcp/factory');
-        mcpClient = MCPClientFactory.create();
-        await mcpClient.connect(mcpServerUrl, mcpApiKey);
+        mcpClient = await MCPClientFactory.acquire(mcpServerUrl, mcpApiKey);
 
         const toolList = await mcpClient.listTools();
         console.log(`[MCP] Connected. Available tools: ${toolList.map((t) => t.name).join(', ') || '(none)'}`);
@@ -219,12 +227,15 @@ export async function POST(req: Request) {
               const toolInfo = `\n> 正在执行：\`${part.toolName}\`...\n\n`;
               fullContent += toolInfo;
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: toolInfo })}\n\n`));
-            } else if (part.type === 'tool-result') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } else if ((part as any).type === 'tool-result') {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const partAny = part as any;
               let resultPreview = '执行完毕。';
-              if (typeof part.result === 'string') {
-                resultPreview = part.result.substring(0, 50) + (part.result.length > 50 ? '...' : '');
+              if (typeof partAny.result === 'string') {
+                resultPreview = partAny.result.substring(0, 50) + (partAny.result.length > 50 ? '...' : '');
               }
-              const resMsg = `\n> ✅ [${part.toolName}] 返回结果：${resultPreview}\n\n`;
+              const resMsg = `\n> ✅ [${partAny.toolName}] 返回结果：${resultPreview}\n\n`;
               fullContent += resMsg;
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: resMsg })}\n\n`));
             } else if (part.type === 'error') {
@@ -245,9 +256,9 @@ export async function POST(req: Request) {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: 'Stream error' })}\n\n`));
         } finally {
           controller.close();
-          // Clean up MCP connection after stream completes
+          // Release MCP connection back to pool after stream completes
           if (mcpClient) {
-            mcpClient.disconnect().catch(() => {});
+            try { (await import('@/lib/mcp/pool')).mcpPool.release(mcpClient); } catch { /* best effort */ }
           }
         }
       },

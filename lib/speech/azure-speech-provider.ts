@@ -22,7 +22,8 @@ export class AzureSpeechProvider implements SpeechProvider {
       body: new Uint8Array(audioBuffer),
     })
     if (!response.ok) {
-      throw new Error(`Azure STT error: ${response.status} ${response.statusText}`)
+      const body = await response.text().catch(() => '')
+      throw new Error(`Azure STT error: ${response.status} ${response.statusText}${body ? ` - ${body.slice(0, 200)}` : ''}`)
     }
     const data = await response.json() as { DisplayText?: string; RecognitionStatus?: string }
     return data.DisplayText ?? ''
@@ -41,7 +42,8 @@ export class AzureSpeechProvider implements SpeechProvider {
       body: ssml,
     })
     if (!response.ok) {
-      throw new Error(`Azure TTS error: ${response.status} ${response.statusText}`)
+      const body = await response.text().catch(() => '')
+      throw new Error(`Azure TTS error: ${response.status} ${response.statusText}${body ? ` - ${body.slice(0, 200)}` : ''}`)
     }
     const arrayBuffer = await response.arrayBuffer()
     return {

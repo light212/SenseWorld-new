@@ -27,6 +27,11 @@ export async function setConfig(key: string, value: string): Promise<void> {
   cache.set(key, value);
 }
 
+export function invalidateConfigCache(): void {
+  cache.clear();
+  cacheLoaded = false;
+}
+
 export function maskApiKey(value: string): string {
   if (!value) return '';
   if (value.length <= 8) return '********';

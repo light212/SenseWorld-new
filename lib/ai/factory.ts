@@ -27,7 +27,7 @@ export class LLMFactory {
         // xAI API 与 OpenAI SDK 完全兼容，使用内置 baseURL
         return new OpenAIProvider(apiKey, model, baseURL ?? 'https://api.x.ai/v1')
       default:
-        throw new Error('AI provider not configured')
+        throw new Error(`Unsupported AI provider: "${provider}". Supported providers: openai, anthropic, xai`)
     }
   }
 }
