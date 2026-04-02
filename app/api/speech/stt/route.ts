@@ -30,6 +30,13 @@ export async function POST(req: NextRequest) {
   }
   const region = await getConfig('speech_region') ?? undefined
   const voice = await getConfig('tts_voice') ?? undefined
+  const baseURL = await getConfig('speech_base_url') ?? undefined
+  const voiceMode = await getConfig('speech_voice_mode') ?? undefined
+
+  // xAI realtime mode does not support standalone STT
+  if (provider === 'xai' && voiceMode === 'realtime') {
+    return NextResponse.json({ error: 'xAI STT 在实时模式下不可用，请使用实时通话功能' }, { status: 503 })
+  }
 
   // 3. Parse multipart form data
   let formData: FormData
@@ -55,7 +62,7 @@ export async function POST(req: NextRequest) {
 
   // 6. Transcribe
   try {
-    const speech = SpeechFactory.create(provider, apiKey, region, voice)
+    const speech = SpeechFactory.create(provider, apiKey, region, voice, baseURL)
     const text = await speech.transcribe(audioBuffer, mimeType)
     return NextResponse.json({ text })
   } catch (err) {

@@ -40,10 +40,11 @@ export async function POST(req: NextRequest) {
   }
   const region = await getConfig('speech_region') ?? undefined
   const voice = await getConfig('tts_voice') ?? undefined
+  const baseURL = await getConfig('speech_base_url') ?? undefined
 
   // 4. Synthesize
   try {
-    const speech = SpeechFactory.create(provider, apiKey, region, voice)
+    const speech = SpeechFactory.create(provider, apiKey, region, voice, baseURL)
     const { audio, mimeType } = await speech.synthesize(text)
     return new Response(new Uint8Array(audio), {
       status: 200,

@@ -6,8 +6,8 @@ export class OpenAISpeechProvider implements SpeechProvider {
   private client: OpenAI
   private voice: SpeechCreateParams['voice']
 
-  constructor(apiKey: string, voice?: string) {
-    this.client = new OpenAI({ apiKey })
+  constructor(apiKey: string, voice?: string, baseURL?: string) {
+    this.client = new OpenAI({ apiKey, ...(baseURL ? { baseURL } : {}) })
     this.voice = (voice as SpeechCreateParams['voice']) ?? 'alloy'
   }
 

@@ -15,17 +15,19 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 
-  const speechProvider = await getConfig('SPEECH_PROVIDER')
-  const aiProvider = await getConfig('AI_PROVIDER')
-  const aiApiKey = await getConfig('AI_API_KEY')
-  const aiModel = await getConfig('AI_MODEL')
+  // Use lowercase keys to match STT/TTS routes
+  const speechProvider = await getConfig('speech_provider')
+  const voiceMode = await getConfig('speech_voice_mode')
+  const aiProvider = await getConfig('ai_provider')
+  const aiApiKey = await getConfig('ai_api_key')
+  const aiModel = await getConfig('ai_model')
 
   // Determine vision support by instantiating the LLM provider
   let supportsVision = false
   if (aiProvider && aiApiKey && aiModel) {
     try {
       const { LLMFactory } = await import('@/lib/ai/factory')
-      const aiBaseUrl = await getConfig('AI_BASE_URL')
+      const aiBaseUrl = await getConfig('ai_base_url')
       const llm = LLMFactory.create(aiProvider, aiApiKey, aiModel, aiBaseUrl ?? undefined)
       supportsVision = llm.supportsVision
     } catch {
@@ -33,11 +35,15 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const supportsSTT = !!speechProvider
+  // xAI standard mode does not support STT; only realtime voice is available
+  const supportsSTT = !!speechProvider && speechProvider !== 'xai'
 
-  const avatarProvider = await getConfig('AVATAR_PROVIDER')
+  const avatarProvider = await getConfig('avatar_provider')
   const supportsAvatar = !!avatarProvider
   const supportsTTS = !!speechProvider && !supportsAvatar
 
-  return NextResponse.json({ supportsSTT, supportsTTS, supportsVision, supportsAvatar })
+  // realtimeVoice flag for xAI realtime mode
+  const realtimeVoice = speechProvider === 'xai' && voiceMode === 'realtime'
+
+  return NextResponse.json({ supportsSTT, supportsTTS, supportsVision, supportsAvatar, realtimeVoice })
 }
