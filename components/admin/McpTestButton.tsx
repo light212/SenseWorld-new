@@ -19,6 +19,12 @@ export function McpTestButton({ currentUrl }: { currentUrl: string }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: currentUrl }),
       })
+      if (res.status === 401) {
+        setState('error')
+        setMessage('登录已过期，请重新登录')
+        setTimeout(() => { window.location.href = '/admin/login' }, 1500)
+        return
+      }
       const data = await res.json()
       if (data.success) {
         setState('success')

@@ -142,9 +142,14 @@ export default function ConfigForm({ initialConfigs }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ configs }),
       });
+      if (res.status === 401) {
+        setMessage('登录已过期，正在跳转登录页...');
+        setTimeout(() => { window.location.href = '/admin/login' }, 1500);
+        return;
+      }
       const data = await res.json();
       if (data.ok) {
-        setMessage('✅ 更改已无缝热重载至全服');
+        setMessage('更改已保存并热重载至全服');
         setEditing({});
         setTimeout(() => setMessage(''), 3000);
         const refreshed = await fetch('/api/admin/config');
@@ -157,10 +162,10 @@ export default function ConfigForm({ initialConfigs }: Props) {
           setValues(newValues);
         }
       } else {
-        setMessage(`❌ 节点通讯异常: ${data.error}`);
+        setMessage(`节点通讯异常: ${data.error}`);
       }
     } catch {
-      setMessage('❌ 网络丢包，连接失败');
+      setMessage('网络请求失败，请检查连接');
     } finally {
       setSaving(false);
     }

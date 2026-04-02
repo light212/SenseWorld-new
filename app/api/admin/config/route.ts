@@ -35,8 +35,16 @@ export async function PUT(request: NextRequest) {
     }
   }
 
+  // Filter out masked values (containing ****) - these should not be saved
+  // Only update keys if user explicitly entered a new value
+  const validConfigs = configs.filter((item) => !item.value.includes('****'));
+
+  if (validConfigs.length === 0) {
+    return NextResponse.json({ ok: true, message: 'No valid configs to update' });
+  }
+
   await Promise.all(
-    configs.map((item) =>
+    validConfigs.map((item) =>
       prisma.config.upsert({
         where: { key: item.key },
         update: { value: item.value },
